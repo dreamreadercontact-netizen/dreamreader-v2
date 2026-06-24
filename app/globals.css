@@ -47,10 +47,10 @@
     @apply inline-block px-[10px] py-[3px] rounded-[20px] text-[11px] font-bold tracking-[0.4px];
   }
   .pill-default {
-    @apply bg-black/[0.07] text-[#1a1a1a] border border-black/[0.12];
+    @apply bg-black/10 text-[#1a1a1a] border border-black/10;
   }
   .pill-red {
-    @apply bg-red-500/10 text-red-600 border border-red-500/20;
+    @apply bg-red-50 text-red-600 border border-red-200;
   }
 
   /* ── INPUTS ── */
@@ -66,10 +66,10 @@
 
   /* ── BOTTOM NAV ── */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-beige-100/97 border-t border-beige-200 flex h-[62px] z-40 backdrop-blur-xl;
+    @apply fixed bottom-0 left-0 right-0 bg-beige-100 border-t border-beige-200 flex h-[62px] z-40 backdrop-blur-xl;
   }
   .bottom-nav-item {
-    @apply flex-1 flex flex-col items-center justify-center gap-[3px] text-[9px] text-beige-400 cursor-pointer border-none bg-none font-bold tracking-[0.5px] uppercase transition-all duration-150;
+    @apply flex-1 flex flex-col items-center justify-center gap-[3px] text-[9px] text-beige-400 cursor-pointer border-none bg-transparent font-bold tracking-[0.5px] uppercase transition-all duration-150;
   }
   .bottom-nav-item.active {
     @apply text-[#1a1a1a];
