@@ -8,25 +8,19 @@ export default async function Home() {
 
   if (!session) redirect("/auth")
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", session.user.id)
-    .single()
+  const [profileResult, novelsResult] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", session.user.id).single(),
+    supabase.from("novels").select("*, chapters(id, num, title, free, published_at, vote_open, vote_closed)").order("created_at")
+  ])
 
-  const { data: novels } = await supabase
-    .from("novels")
-    .select("*, chapters(id, num, title, free, published_at, vote_open, vote_closed)")
-    .order("created_at")
-
-  const user = profile || {
+  const user = profileResult.data || {
     id: session.user.id,
     name: session.user.email?.split("@")[0] || "Lecteur",
-    role: "reader",
+    role: "reader" as const,
     subscribed: false,
     avatar: "L",
     created_at: new Date().toISOString()
   }
 
-  return <HomeClient user={user} novels={novels || []} />
+  return <HomeClient user={user} novels={novelsResult.data || []} />
 }
