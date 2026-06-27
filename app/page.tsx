@@ -1,26 +1,26 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import HomeClient from '@/components/HomeClient'
+"use client"
 
-export default async function HomePage() {
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+
+export default function HomePage() {
+  const router = useRouter()
   const supabase = createClient()
-  
-  const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session) {
-    redirect('/auth')
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push("/auth")
+      } else {
+        router.push("/home")
+      }
+    })
+  }, [])
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single()
-
-  const { data: novels } = await supabase
-    .from('novels')
-    .select('*, chapters(id, num, title, free, published_at, vote_open, vote_closed)')
-    .order('created_at')
-
-  return <HomeClient user={profile || { id: session.user.id, name: session.user.email?.split('@')[0] || 'User', role: 'reader', subscribed: false, avatar: '?' }} novels={novels || []} />
+  return (
+    <div style={{ minHeight: "100vh", background: "#f5f0e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ fontFamily: "Lora, Georgia, serif", fontSize: 18, color: "#9a8878" }}>Chargement...</div>
+    </div>
+  )
 }
