@@ -18,6 +18,18 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
   const [newNovel, setNewNovel] = useState({ title: "", genre: "", desc: "", status: "live" })
   const [loading, setLoading] = useState(false)
 
+  // Restaurer le brouillon si disponible
+  useState(() => {
+    const draft = localStorage.getItem("dr_draft_chapter")
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft)
+        setNewChap(parsed)
+        showToast("📝 Brouillon restauré")
+      } catch(e) {}
+    }
+  })
+
   async function createNovel() {
     if (!newNovel.title) { showToast("Titre requis"); return }
     setLoading(true)
@@ -42,10 +54,14 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
     if (!novelId) { showToast("Créez d'abord un roman"); return }
     setLoading(true)
 
+    // Sauvegarde brouillon automatique
+    localStorage.setItem("dr_draft_chapter", JSON.stringify(newChap))
+
     const novel = novels.find(n => n.id === novelId)
     const maxNum = novel?.chapters?.length ? Math.max(...novel.chapters.map((c: any) => c.num)) : 0
-
     const opts = [newChap.opt1, newChap.opt2, newChap.opt3].filter(Boolean)
+
+    console.log("Publication chapitre:", { novelId, title: newChap.title, contentLength: newChap.content.length })
 
     const { data: chapter, error } = await supabase.from("chapters").insert({
       novel_id: novelId,
@@ -56,21 +72,29 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
       vote_open: opts.length > 0
     }).select().single()
 
-    if (error) { setLoading(false); showToast("Erreur: " + error.message); return }
+    if (error) {
+      setLoading(false)
+      console.error("Erreur publication:", error)
+      showToast("❌ Erreur: " + error.message + " (brouillon sauvegardé)")
+      return
+    }
 
     if (opts.length > 0) {
-      await supabase.from("vote_options").insert(
+      const { error: optError } = await supabase.from("vote_options").insert(
         opts.map(text => ({ chapter_id: chapter.id, text, votes: 0 }))
       )
+      if (optError) console.error("Erreur options:", optError)
     }
 
     setNovels(prev => prev.map(n => n.id === novelId ? {
       ...n, chapters: [...(n.chapters || []), chapter]
     } : n))
 
+    // Supprime le brouillon après succès
+    localStorage.removeItem("dr_draft_chapter")
     setNewChap({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
     setLoading(false)
-    showToast("✓ Chapitre publié !")
+    showToast("✓ Chapitre publié avec succès !")
   }
 
   const tabs: ["dash"|"publish"|"chapters"|"candidatures", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["candidatures", "Candidatures"]]
