@@ -1,17 +1,16 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { Novel, Profile } from '@/lib/types'
-import LibraryView from './LibraryView'
-import AdminView from './AdminView'
-import ProfileView from './ProfileView'
-import SubscribeView from './SubscribeView'
-import NovelDetail from './NovelDetail'
-import Reader from './Reader'
+import { useState } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { Novel, Profile } from "@/lib/types"
+import LibraryView from "./LibraryView"
+import AdminView from "./AdminView"
+import Reader from "./Reader"
+import NovelDetail from "./NovelDetail"
+import SubscribeView from "./SubscribeView"
 
-type Tab = 'home' | 'library' | 'books' | 'admin' | 'sub' | 'profile'
+type Tab = "home" | "library" | "books" | "admin" | "sub" | "profile"
 
 interface Props {
   user: Profile
@@ -22,16 +21,17 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const router = useRouter()
   const supabase = createClient()
 
-  const [tab, setTab] = useState<Tab>('home')
+  const [tab, setTab] = useState<Tab>("home")
   const [novels, setNovels] = useState<Novel[]>(initialNovels)
   const [user] = useState<Profile>(initialUser)
   const [selNovel, setSelNovel] = useState<Novel | null>(null)
   const [selChapId, setSelChapId] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [previewMode, setPreviewMode] = useState(false)
 
-  const isAdmin = user?.role === 'admin'
-  const isSub = user?.subscribed || isAdmin
-  const STRIPE = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || ''
+  const isAdmin = user?.role === "admin"
+  const isSub = previewMode ? false : (user?.subscribed || isAdmin)
+  const STRIPE = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || ""
 
   function showToast(msg: string) {
     setToast(msg)
@@ -40,7 +40,7 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
 
   async function logout() {
     await supabase.auth.signOut()
-    router.push('/auth')
+    router.push("/auth")
     router.refresh()
   }
 
@@ -50,10 +50,15 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
     setTab(t)
   }
 
-  // Find selected chapter
-  const selChap = selNovel?.chapters?.find(c => c.id === selChapId) || null
+  async function deleteNovel(id: number) {
+    if (!confirm("Supprimer ce roman ?")) return
+    await supabase.from("novels").delete().eq("id", id)
+    setNovels(prev => prev.filter(n => n.id !== id))
+    showToast("Roman supprimé")
+  }
 
-  // If reading a chapter
+  const selChap = selNovel?.chapters?.find((c: any) => c.id === selChapId) || null
+
   if (selChap && selNovel) {
     return (
       <Reader
@@ -70,139 +75,152 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   }
 
   return (
-    <div className="min-h-screen bg-beige-100">
-      {/* TOP NAV */}
-      <nav className="sticky top-0 z-40 bg-beige-100/95 border-b border-beige-200 h-14 flex items-center px-4 gap-[10px] backdrop-blur-xl">
-        <div className="text-[17px] font-black mr-auto cursor-pointer tracking-[-0.5px] text-[#1a1a1a]" onClick={() => goTo('home')}>
+    <div style={{ minHeight: "100vh", background: "#f5f0e8" }}>
+      {/* NAV */}
+      <nav style={{ position: "sticky", top: 0, zIndex: 40, background: "rgba(245,240,232,.96)", borderBottom: "1px solid #e0d8cc", height: 56, display: "flex", alignItems: "center", padding: "0 16px", gap: 10, backdropFilter: "blur(20px)" }}>
+        <div style={{ fontSize: 17, fontWeight: 900, marginRight: "auto", cursor: "pointer", letterSpacing: -0.5, color: "#1a1a1a" }} onClick={() => goTo("home")}>
           ✦ DreamReader
         </div>
-        {isSub && !isAdmin && <span className="text-[11px] text-beige-600 font-bold">★ ABONNÉ</span>}
-        {!isSub && (
-          <a href={STRIPE} target="_blank" className="btn-primary text-[12px] h-[34px] px-4 rounded-full no-underline flex items-center">
-            S&apos;abonner
+        {isAdmin && (
+          <button onClick={() => setPreviewMode(p => !p)}
+            style={{ height: 32, padding: "0 12px", borderRadius: 20, border: "1.5px solid #d8cfc4", background: previewMode ? "#1a1a1a" : "none", color: previewMode ? "#fff" : "#9a8878", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+            {previewMode ? "✕ Quitter vue" : "👤 Vue abonné"}
+          </button>
+        )}
+        {isSub && !isAdmin && <span style={{ fontSize: 11, color: "#8b6f4e", fontWeight: 700 }}>★ ABONNÉ</span>}
+        {!isSub && !isAdmin && (
+          <a href={STRIPE} target="_blank" style={{ height: 34, padding: "0 14px", borderRadius: 30, background: "#1a1a1a", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: 12, display: "flex", alignItems: "center" }}>
+            S'abonner
           </a>
         )}
-        <button className="btn-outline text-[12px] h-[34px] px-4 rounded-full" onClick={logout}>Quitter</button>
+        <button onClick={logout} style={{ height: 34, padding: "0 14px", borderRadius: 30, border: "1.5px solid #d8cfc4", background: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1a1a1a" }}>Quitter</button>
       </nav>
 
       {/* CONTENT */}
-      <div className="max-w-[680px] mx-auto px-4 pt-5 pb-[100px]">
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "20px 16px 100px" }}>
 
         {/* HOME */}
-        {tab === 'home' && (
+        {tab === "home" && (
           <div>
-            <div className="py-10">
-              <div className="text-[10px] font-bold text-beige-400 tracking-[3px] uppercase mb-[14px]">La plateforme de romans interactifs</div>
-              <h1 className="font-serif text-[44px] font-semibold tracking-[-2px] leading-[1.05] mb-[14px] text-[#1a1a1a]">
-                L&apos;histoire<br/>que vous<br/>écrivez.
+            <div style={{ padding: "40px 0 20px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#b0a090", letterSpacing: 3, textTransform: "uppercase", marginBottom: 14 }}>La plateforme de romans interactifs</div>
+              <h1 style={{ fontFamily: "Lora,Georgia,serif", fontSize: "clamp(36px,6vw,44px)", fontWeight: 600, letterSpacing: -2, lineHeight: 1.05, marginBottom: 14, color: "#1a1a1a" }}>
+                L'histoire<br/>que vous<br/>écrivez.
               </h1>
-              <p className="text-[14px] text-beige-500 mb-6 max-w-[360px] leading-[1.7]">
+              <p style={{ fontSize: 14, color: "#9a8878", marginBottom: 24, maxWidth: 360, lineHeight: 1.7 }}>
                 Lisez, votez, influencez. Chaque chapitre se termine par un choix qui façonne la suite.
               </p>
-              <div className="flex gap-[10px] flex-wrap">
-                <button className="btn-primary h-[46px] px-[26px] text-[14px] rounded-xl" onClick={() => setTab('library')}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={() => setTab("library")} style={{ height: 46, padding: "0 26px", borderRadius: 12, background: "#1a1a1a", color: "#fff", fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer" }}>
                   Découvrir les romans
                 </button>
                 {!isSub && (
-                  <a href={STRIPE} target="_blank" className="btn-outline h-[46px] px-[26px] text-[14px] rounded-xl no-underline flex items-center">
-                    S&apos;abonner · 5€/mois
+                  <a href={STRIPE} target="_blank" style={{ height: 46, padding: "0 26px", borderRadius: 12, border: "1.5px solid #c8b89a", color: "#1a1a1a", fontWeight: 700, fontSize: 14, textDecoration: "none", display: "flex", alignItems: "center" }}>
+                    S'abonner · 5€/mois
                   </a>
                 )}
               </div>
             </div>
-
-            <div className="text-[10px] font-bold text-beige-400 tracking-[2px] uppercase mb-3">En cours</div>
-            {novels.filter(n => n.status === 'live').map(n => (
-              <div key={n.id} className="card" onClick={() => { setSelNovel(n); setTab('library') }}>
+            {novels.filter(n => n.status === "live").map(n => (
+              <div key={n.id} onClick={() => { setSelNovel(n); setTab("library") }}
+                style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 10, cursor: "pointer", display: "flex", gap: 14, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
                 <CoverDiv cover={n.cover} />
-                <div className="flex-1">
-                  <div className="font-serif text-[17px] font-semibold mb-1 leading-[1.3] text-[#1a1a1a]">{n.title}</div>
-                  <div className="text-[11px] text-beige-400 mb-[6px] uppercase tracking-[1px]">{n.genre}</div>
-                  <div className="text-[13px] text-beige-500 leading-[1.5]">{n.description}</div>
-                  <div className="mt-[10px] flex gap-2">
-                    <span className="pill pill-default">En cours</span>
-                    {!isSub && !isAdmin && <span className="pill pill-red">Ch.1 gratuit</span>}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 17, fontWeight: 600, marginBottom: 4, lineHeight: 1.3, color: "#1a1a1a" }}>{n.title}</div>
+                  <div style={{ fontSize: 11, color: "#9a8878", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>{n.genre}</div>
+                  <div style={{ fontSize: 13, color: "#9a8878", lineHeight: 1.5 }}>{n.description}</div>
+                  <div style={{ marginTop: 10 }}>
+                    <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "rgba(0,0,0,.07)", color: "#1a1a1a", border: "1px solid rgba(0,0,0,.12)" }}>En cours</span>
                   </div>
                 </div>
               </div>
             ))}
+            {novels.length === 0 && (
+              <div style={{ textAlign: "center", color: "#c8b89a", padding: "60px 0", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+                Les romans arrivent bientôt...
+              </div>
+            )}
           </div>
         )}
 
         {/* LIBRARY */}
-        {tab === 'library' && !selNovel && (
-          <LibraryView
-            novels={novels}
-            isAdmin={isAdmin}
-            onSelect={setSelNovel}
-            onDelete={async (id) => {
-              if (!confirm('Supprimer ce roman ?')) return
-              await fetch(`/api/novels/${id}`, { method: 'DELETE' })
-              setNovels(prev => prev.filter(n => n.id !== id))
-              showToast('Roman supprimé')
-            }}
-          />
+        {tab === "library" && !selNovel && (
+          <LibraryView novels={novels} isAdmin={isAdmin} onSelect={setSelNovel} onDelete={deleteNovel} />
         )}
 
         {/* NOVEL DETAIL */}
-        {tab === 'library' && selNovel && (
-          <NovelDetail
-            novel={selNovel}
-            isSub={isSub}
-            isAdmin={isAdmin}
-            onBack={() => setSelNovel(null)}
-            onReadChapter={(chapId) => setSelChapId(chapId)}
-          />
+        {tab === "library" && selNovel && (
+          <NovelDetail novel={selNovel} isSub={isSub} isAdmin={isAdmin} onBack={() => setSelNovel(null)} onReadChapter={(chapId) => setSelChapId(chapId)} />
         )}
 
-        {/* SUBSCRIPTION */}
-        {tab === 'sub' && <SubscribeView stripeUrl={STRIPE} />}
+        {/* ABONNEMENT */}
+        {tab === "sub" && <SubscribeView stripeUrl={STRIPE} />}
 
-        {/* PROFILE */}
-        {tab === 'profile' && <ProfileView user={user} isSub={isSub} isAdmin={isAdmin} onLogout={logout} />}
+        {/* PROFIL */}
+        {tab === "profile" && (
+          <div>
+            <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
+              <div style={{ width: 48, height: 48, borderRadius: 10, background: "#e0d8cc", color: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, marginBottom: 12 }}>
+                {user?.avatar || "?"}
+              </div>
+              <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 22, fontWeight: 600, marginBottom: 4, color: "#1a1a1a" }}>{user?.name}</div>
+              <div style={{ fontSize: 13, color: "#9a8878", marginBottom: 12 }}>{user?.role === "admin" ? "Auteur" : "Lecteur"}</div>
+              {isSub && !isAdmin && (
+                <div style={{ display: "inline-block", padding: "4px 12px", borderRadius: 20, background: "#1a1a1a", color: "#fff", fontSize: 12, fontWeight: 700, marginBottom: 12 }}>★ ABONNÉ</div>
+              )}
+              {!isSub && !isAdmin && (
+                <a href={STRIPE} target="_blank" style={{ display: "inline-block", padding: "10px 24px", borderRadius: 30, background: "#1a1a1a", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: 13, marginBottom: 12 }}>
+                  S'abonner · 5€/mois
+                </a>
+              )}
+              <br />
+              <button onClick={logout} style={{ padding: "8px 20px", borderRadius: 12, border: "1.5px solid #d8cfc4", background: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1a1a1a" }}>Se déconnecter</button>
+            </div>
+          </div>
+        )}
 
         {/* ADMIN */}
-        {isAdmin && tab === 'admin' && (
-          <AdminView
-            novels={novels}
-            setNovels={setNovels}
-            showToast={showToast}
-          />
+        {isAdmin && tab === "admin" && (
+          <AdminView novels={novels} setNovels={setNovels} showToast={showToast} />
         )}
       </div>
 
       {/* BOTTOM NAV */}
-      <nav className="bottom-nav">
+      <nav style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "rgba(245,240,232,.97)", borderTop: "1px solid #e0d8cc", display: "flex", height: 62, zIndex: 40, backdropFilter: "blur(20px)" }}>
         {[
-          { id: 'home', icon: '⌂', label: 'Accueil' },
-          { id: 'library', icon: '◻', label: 'Romans' },
-          { id: 'books', icon: '◈', label: 'Livres' },
-          ...(isAdmin ? [{ id: 'admin', icon: '⚙', label: 'Admin' }] : [{ id: 'sub', icon: '★', label: 'Abonnement' }]),
-          { id: 'profile', icon: '◉', label: 'Profil' },
+          { id: "home", icon: "⌂", label: "Accueil" },
+          { id: "library", icon: "◻", label: "Romans" },
+          { id: "books", icon: "◈", label: "Livres" },
+          ...(isAdmin ? [{ id: "admin", icon: "⚙", label: "Admin" }] : [{ id: "sub", icon: "★", label: "Abonnement" }]),
+          { id: "profile", icon: "◉", label: "Profil" },
         ].map(item => (
-          <button key={item.id} className={`bottom-nav-item ${tab === item.id ? 'active' : ''}`} onClick={() => goTo(item.id as Tab)}>
-            <span className="text-[20px] leading-none">{item.icon}</span>
+          <button key={item.id}
+            onClick={() => goTo(item.id as Tab)}
+            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, fontSize: 9, color: tab === item.id ? "#1a1a1a" : "#b0a090", cursor: "pointer", border: "none", background: "none", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", fontFamily: "Inter,sans-serif" }}>
+            <span style={{ fontSize: 20, lineHeight: 1 }}>{item.icon}</span>
             {item.label}
           </button>
         ))}
       </nav>
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", background: "#1a1a1a", color: "#fff", padding: "10px 20px", borderRadius: 30, fontSize: 13, fontWeight: 700, zIndex: 999, whiteSpace: "nowrap" }}>
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
 
 function CoverDiv({ cover, w = 56, h = 76 }: { cover: string; w?: number; h?: number }) {
-  const isImg = cover && (cover.startsWith('data:') || cover.startsWith('http'))
+  const isImg = cover && (cover.startsWith("data:") || cover.startsWith("http"))
   return (
-    <div
-      style={{
-        width: w, height: h, borderRadius: 8, flexShrink: 0,
-        border: '1px solid #e0d8cc',
-        background: isImg ? '#fff' : cover,
-        backgroundImage: isImg ? `url(${cover})` : 'none',
-        backgroundSize: 'cover', backgroundPosition: 'center top',
-      }}
-    />
+    <div style={{
+      width: w, height: h, borderRadius: 8, flexShrink: 0,
+      border: "1px solid #e0d8cc",
+      background: isImg ? "#fff" : cover,
+      backgroundImage: isImg ? `url(${cover})` : "none",
+      backgroundSize: "cover", backgroundPosition: "center top",
+    }} />
   )
 }
