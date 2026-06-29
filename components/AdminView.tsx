@@ -12,7 +12,7 @@ interface Props {
 
 export default function AdminView({ novels, setNovels, showToast }: Props) {
   const supabase = createClient()
-  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters">("dash")
+  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters"|"candidatures">("dash")
   const [newChap, setNewChap] = useState({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
   const [showNewNovel, setShowNewNovel] = useState(false)
   const [newNovel, setNewNovel] = useState({ title: "", genre: "", desc: "", status: "live" })
@@ -73,7 +73,7 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
     showToast("✓ Chapitre publié !")
   }
 
-  const tabs: ["dash"|"publish"|"chapters", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"]]
+  const tabs: ["dash"|"publish"|"chapters"|"candidatures", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["candidatures", "Candidatures"]]
 
   return (
     <div>
@@ -94,6 +94,8 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
             {[
               { val: novels.length, label: "ROMANS" },
               { val: novels.reduce((s, n) => s + (n.chapters?.length || 0), 0), label: "CHAPITRES" },
+              { val: "—", label: "REVENUS" },
+              { val: 0, label: "COMMENTAIRES" },
             ].map((s, i) => (
               <div key={i} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 12, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
                 <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -2, color: "#1a1a1a" }}>{s.val}</div>
@@ -176,6 +178,15 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
               {(!n.chapters || n.chapters.length === 0) && <div style={{ fontSize: 13, color: "#c8b89a", fontStyle: "italic" }}>Aucun chapitre.</div>}
             </div>
           ))}
+        </div>
+      )}
+
+      {adminTab === "candidatures" && (
+        <div>
+          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>Candidatures d'auteurs reçues</div>
+          <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+            Aucune candidature pour l'instant.
+          </div>
         </div>
       )}
     </div>
