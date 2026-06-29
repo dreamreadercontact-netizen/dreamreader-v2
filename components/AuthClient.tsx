@@ -102,7 +102,7 @@ export default function AuthClient() {
             <div style={{position:"relative"}}>
               <input className="input" type={showPass?"text":"password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
               <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
-                {showPass?"🙈":"👁️"}
+                {showPass ? "◉" : "👁"}
               </button>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function AuthClient() {
             <div style={{position:"relative"}}>
               <input className="input" type={showPass?"text":"password"} placeholder="6 caractères minimum" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
               <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
-                {showPass?"🙈":"👁️"}
+                {showPass ? "◉" : "👁"}
               </button>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function AuthClient() {
             <div style={{position:"relative"}}>
               <input className="input" type={showPass?"text":"password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
               <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
-                {showPass?"🙈":"👁️"}
+                {showPass ? "◉" : "👁"}
               </button>
             </div>
           </div>
