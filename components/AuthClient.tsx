@@ -1,16 +1,17 @@
 'use client'
 
 import { useState } from 'react'
+import LandingPage from './LandingPage'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-type AuthView = 'landing' | 'login' | 'signup' | 'admin_login' | 'apprenti'
+type AuthView = 'intro' | 'landing' | 'login' | 'signup' | 'admin_login' | 'apprenti'
 
 export default function AuthClient() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [view, setView] = useState<AuthView>('landing')
+  const [view, setView] = useState<AuthView>('intro')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -64,6 +65,13 @@ export default function AuthClient() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-beige-100 px-6">
+      {view === 'intro' && (
+        <LandingPage 
+          onEnter={() => setView('landing')} 
+          stripeUrl={process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || ''}
+        />
+      )}
+
       {view === 'landing' && (
         <div className="w-full max-w-[400px] text-center">
           <div className="text-[11px] font-bold text-beige-400 tracking-[3px] uppercase mb-6">DreamReader</div>
