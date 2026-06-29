@@ -93,9 +93,9 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             {[
               { val: novels.length, label: "ROMANS" },
-              { val: novels.reduce((s, n) => s + (n.chapters?.length || 0), 0), label: "CHAPITRES" },
+              { val: "—", label: "ABONNÉS" },
               { val: "—", label: "REVENUS" },
-              { val: 0, label: "COMMENTAIRES" },
+              { val: "—", label: "LIKES" },
             ].map((s, i) => (
               <div key={i} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 12, padding: 16, boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
                 <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: -2, color: "#1a1a1a" }}>{s.val}</div>
