@@ -19,6 +19,7 @@ export default function AuthClient() {
   const [apprentiSent, setApprontiSent] = useState(false)
   const [apprentiName, setApprontiName] = useState('')
   const [apprentiEmail, setApprontiEmail] = useState('')
+  const [showPass, setShowPass] = useState(false)
 
   async function handleLogin() {
     setError(''); setLoading(true)
@@ -98,7 +99,12 @@ export default function AuthClient() {
           </div>
           <div className="field">
             <label className="label">Mot de passe</label>
-            <input className="input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+            <div style={{position:"relative"}}>
+              <input className="input" type={showPass?"text":"password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
+              <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
+                {showPass?"🙈":"👁️"}
+              </button>
+            </div>
           </div>
           {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-600 mb-3">{error}</div>}
           <button className="btn-primary w-full h-[48px] text-[14px] rounded-xl mb-[10px]" onClick={handleLogin} disabled={loading}>
@@ -116,7 +122,14 @@ export default function AuthClient() {
           <h2 className="text-[26px] font-black tracking-[-1px] mb-[22px] text-[#1a1a1a]">Créer un compte</h2>
           <div className="field"><label className="label">Pseudo</label><input className="input" placeholder="Votre pseudo" value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="field"><label className="label">Email</label><input className="input" type="email" placeholder="votre@email.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
-          <div className="field"><label className="label">Mot de passe</label><input className="input" type="password" placeholder="6 caractères minimum" value={password} onChange={e => setPassword(e.target.value)} /></div>
+          <div className="field"><label className="label">Mot de passe</label>
+            <div style={{position:"relative"}}>
+              <input className="input" type={showPass?"text":"password"} placeholder="6 caractères minimum" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
+              <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
+                {showPass?"🙈":"👁️"}
+              </button>
+            </div>
+          </div>
           {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-600 mb-3">{error}</div>}
           <button className="btn-primary w-full h-[48px] text-[14px] rounded-xl mb-[10px]" onClick={handleSignup} disabled={loading}>{loading ? '...' : 'Créer mon compte'}</button>
           <button className="btn-outline w-full h-[42px] text-[13px] rounded-xl" onClick={() => { setView('landing'); setError('') }}>← Retour</button>
@@ -129,7 +142,14 @@ export default function AuthClient() {
           <h2 className="text-[22px] font-black mb-1 text-[#1a1a1a]">Espace auteur</h2>
           <p className="text-beige-400 text-[13px] mb-[22px]">Accès réservé</p>
           <div className="field text-left"><label className="label">Email</label><input className="input" type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
-          <div className="field text-left"><label className="label">Mot de passe</label><input className="input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} /></div>
+          <div className="field text-left"><label className="label">Mot de passe</label>
+            <div style={{position:"relative"}}>
+              <input className="input" type={showPass?"text":"password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} style={{paddingRight:44}} />
+              <button onClick={()=>setShowPass(p=>!p)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#9a8878"}}>
+                {showPass?"🙈":"👁️"}
+              </button>
+            </div>
+          </div>
           {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-600 mb-3">{error}</div>}
           <button className="btn-primary w-full h-[48px] text-[14px] rounded-xl mb-[10px]" onClick={handleLogin} disabled={loading}>{loading ? '...' : 'Entrer'}</button>
           <button className="btn-outline w-full h-[42px] text-[13px] rounded-xl" onClick={() => { setView('landing'); setError(''); setEmail(''); setPassword('') }}>← Retour</button>
