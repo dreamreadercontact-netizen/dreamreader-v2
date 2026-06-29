@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import OnboardingTip from "./OnboardingTip"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { Novel, Profile } from "@/lib/types"
@@ -202,6 +203,8 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
           </button>
         ))}
       </nav>
+
+      <OnboardingTip section={tab} />
 
       {toast && (
         <div style={{ position: "fixed", bottom: 72, left: "50%", transform: "translateX(-50%)", background: "#1a1a1a", color: "#fff", padding: "10px 20px", borderRadius: 30, fontSize: 13, fontWeight: 700, zIndex: 999, whiteSpace: "nowrap" }}>
