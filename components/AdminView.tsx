@@ -12,7 +12,9 @@ interface Props {
 
 export default function AdminView({ novels, setNovels, showToast }: Props) {
   const supabase = createClient()
-  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters"|"candidatures">("dash")
+  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters"|"candidatures"|"readers">("dash")
+  const [readers, setReaders] = useState<any[]>([])
+  const [readersLoaded, setReadersLoaded] = useState(false)
   const [newChap, setNewChap] = useState({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
   const [showNewNovel, setShowNewNovel] = useState(false)
   const [newNovel, setNewNovel] = useState({ title: "", genre: "", desc: "", status: "live" })
@@ -97,14 +99,19 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
     showToast("✓ Chapitre publié avec succès !")
   }
 
-  const tabs: ["dash"|"publish"|"chapters"|"candidatures", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["candidatures", "Candidatures"]]
+  const tabs: ["dash"|"publish"|"chapters"|"candidatures"|"readers", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["readers", "Lecteurs"], ["candidatures", "Candidatures"]]
+
+  async function loadReaders() {
+    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
+    if (!error && data) { setReaders(data); setReadersLoaded(true) }
+  }
 
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1, marginBottom: 16, color: "#1a1a1a" }}>Administration</h2>
       <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
         {tabs.map(([id, label]) => (
-          <button key={id} onClick={() => setAdminTab(id)}
+          <button key={id} onClick={() => { setAdminTab(id); if (id === "readers" && !readersLoaded) loadReaders() }}
             style={{ padding: "8px 16px", borderRadius: 30, border: "1.5px solid", borderColor: adminTab === id ? "#1a1a1a" : "#d8cfc4", background: adminTab === id ? "#1a1a1a" : "none", color: adminTab === id ? "#fff" : "#9a8878", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {label}
           </button>
@@ -202,6 +209,35 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
               {(!n.chapters || n.chapters.length === 0) && <div style={{ fontSize: 13, color: "#c8b89a", fontStyle: "italic" }}>Aucun chapitre.</div>}
             </div>
           ))}
+        </div>
+      )}
+
+      {adminTab === "readers" && (
+        <div>
+          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>{readers.length} compte{readers.length > 1 ? "s" : ""} créé{readers.length > 1 ? "s" : ""}</div>
+          {readers.map((r: any) => (
+            <div key={r.id} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 12, padding: 14, marginBottom: 8, display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "#e0d8cc", color: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, flexShrink: 0 }}>
+                {r.avatar || r.name?.[0]?.toUpperCase() || "?"}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: "#1a1a1a" }}>{r.name}</div>
+                <div style={{ fontSize: 11, color: "#b0a090" }}>{r.created_at ? new Date(r.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : ""}</div>
+              </div>
+              {r.role === "admin" ? (
+                <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "#1a1a1a", color: "#fff" }}>Admin</span>
+              ) : r.subscribed ? (
+                <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "#dcfce7", color: "#16a34a", border: "1px solid #bbf7d0" }}>★ Abonné</span>
+              ) : (
+                <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: "#f3f0eb", color: "#9a8878", border: "1px solid #e0d8cc" }}>Non abonné</span>
+              )}
+            </div>
+          ))}
+          {readers.length === 0 && readersLoaded && (
+            <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+              Aucun compte créé pour l'instant.
+            </div>
+          )}
         </div>
       )}
 
