@@ -13,6 +13,18 @@
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
+  button {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button:active {
+    transform: scale(1.05);
+  }
+  a {
+    transition: transform 0.15s ease;
+  }
+  a:active {
+    transform: scale(1.05);
+  }
 }
 
 @layer components {
