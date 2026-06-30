@@ -119,15 +119,21 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
         </div>
       )}
 
-      {localNovels.map(n => (
+      {localNovels.map(n => {
+        const isImg = n.cover && (n.cover.startsWith("data:") || n.cover.startsWith("http"))
+        return (
         <div key={n.id} className="relative" style={{ position: "relative" }}>
           <div className="card" style={{ paddingRight: isAdmin ? "80px" : "18px" }} onClick={() => onSelect(n)}>
-            <CoverDiv
-              cover={n.cover}
-              isAdmin={isAdmin}
-              uploading={uploadingId === n.id}
-              onUpload={e => handleCoverUpload(n.id, e)}
-            />
+            {/* Cover - click area is separate from card click */}
+            <div style={{ position: "relative", flexShrink: 0, width: 56, height: 76 }}>
+              <div style={{
+                width: 56, height: 76, borderRadius: 8,
+                border: "1px solid #e0d8cc",
+                background: isImg ? "#fff" : n.cover,
+                backgroundImage: isImg ? `url(${n.cover})` : "none",
+                backgroundSize: "cover", backgroundPosition: "center top",
+              }} />
+            </div>
             <div>
               <div className="font-serif" style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, color: "#1a1a1a" }}>{n.title}</div>
               <div style={{ fontSize: 11, color: "#9a8878", marginTop: 4, textTransform: "uppercase", letterSpacing: 1 }}>{n.genre}</div>
@@ -138,6 +144,27 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
               </div>
             </div>
           </div>
+
+          {/* Upload button - positioned absolutely OUTSIDE the card's onClick area */}
+          {isAdmin && (
+            <label
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: "absolute", left: 60, top: "50%", marginTop: 22, width: 22, height: 22, borderRadius: "50%",
+                background: "#1a1a1a", color: "#fff", border: "2px solid #fff", fontSize: 13, fontWeight: 700,
+                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+                boxShadow: "0 1px 4px rgba(0,0,0,.25)", zIndex: 10
+              }}>
+              {uploadingId === n.id ? "…" : "+"}
+              <input
+                type="file" accept="image/*"
+                onClick={e => e.stopPropagation()}
+                onChange={e => handleCoverUpload(n.id, e)}
+                style={{ display: "none" }}
+              />
+            </label>
+          )}
+
           {isAdmin && (
             <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", display: "flex", flexDirection: "column", gap: 6 }}>
               <button onClick={e => { e.stopPropagation(); onDelete(n.id) }}
@@ -145,7 +172,8 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
             </div>
           )}
         </div>
-      ))}
+        )
+      })}
 
       {localNovels.length === 0 && (
         <div style={{ textAlign: "center", color: "#c8b89a", padding: "40px 0", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
