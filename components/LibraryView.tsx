@@ -49,6 +49,7 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
   const [localNovels, setLocalNovels] = useState<Novel[]>(novels)
   const [loading, setLoading] = useState(false)
   const [uploadingId, setUploadingId] = useState<number | null>(null)
+  const [zoomImage, setZoomImage] = useState<string | null>(null)
 
   async function createNovel() {
     if (!form.title) return
@@ -125,7 +126,9 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
         <div key={n.id} className="relative" style={{ position: "relative" }}>
           <div className="card" style={{ paddingRight: isAdmin ? "80px" : "18px" }} onClick={() => onSelect(n)}>
             {/* Cover - click area is separate from card click */}
-            <div style={{ position: "relative", flexShrink: 0, width: 56, height: 76 }}>
+            <div
+              onClick={e => { if (isImg) { e.stopPropagation(); setZoomImage(n.cover) } }}
+              style={{ position: "relative", flexShrink: 0, width: 56, height: 76, cursor: isImg ? "zoom-in" : "default" }}>
               <div style={{
                 width: 56, height: 76, borderRadius: 8,
                 border: "1px solid #e0d8cc",
