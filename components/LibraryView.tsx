@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Novel } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 
@@ -10,29 +10,49 @@ interface Props {
   onDelete: (id: number) => void
 }
 
-function CoverDiv({ cover }: { cover: string }) {
+function CoverDiv({ cover, isAdmin, onUpload, uploading }: { cover: string; isAdmin: boolean; onUpload: (e: React.ChangeEvent<HTMLInputElement>) => void; uploading: boolean }) {
   const isImg = cover && (cover.startsWith("data:") || cover.startsWith("http"))
+  const fileRef = useRef<HTMLInputElement>(null)
   return (
-    <div style={{
-      width: 56, height: 76, borderRadius: 8, flexShrink: 0,
-      border: "1px solid #e0d8cc",
-      background: isImg ? "#fff" : cover,
-      backgroundImage: isImg ? `url(${cover})` : "none",
-      backgroundSize: "cover", backgroundPosition: "center top",
-    }} />
+    <div style={{ position: "relative", flexShrink: 0 }}>
+      <div style={{
+        width: 56, height: 76, borderRadius: 8,
+        border: "1px solid #e0d8cc",
+        background: isImg ? "#fff" : cover,
+        backgroundImage: isImg ? `url(${cover})` : "none",
+        backgroundSize: "cover", backgroundPosition: "center top",
+      }} />
+      {isAdmin && (
+        <>
+          <input ref={fileRef} type="file" accept="image/*" onChange={onUpload} style={{ display: "none" }} />
+          <button
+            onClick={e => { e.stopPropagation(); fileRef.current?.click() }}
+            disabled={uploading}
+            style={{
+              position: "absolute", bottom: -6, right: -6, width: 22, height: 22, borderRadius: "50%",
+              background: "#1a1a1a", color: "#fff", border: "2px solid #fff", fontSize: 13, fontWeight: 700,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+              boxShadow: "0 1px 4px rgba(0,0,0,.2)"
+            }}>
+            {uploading ? "…" : "+"}
+          </button>
+        </>
+      )}
+    </div>
   )
 }
 
 export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Props) {
+  const supabase = createClient()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: "", genre: "", desc: "", status: "live" })
   const [localNovels, setLocalNovels] = useState<Novel[]>(novels)
   const [loading, setLoading] = useState(false)
+  const [uploadingId, setUploadingId] = useState<number | null>(null)
 
   async function createNovel() {
     if (!form.title) return
     setLoading(true)
-    const supabase = createClient()
     const { data, error } = await supabase.from("novels").insert({
       title: form.title,
       genre: form.genre || "Roman",
@@ -46,6 +66,24 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
       setForm({ title: "", genre: "", desc: "", status: "live" })
       setShowForm(false)
     }
+  }
+
+  async function handleCoverUpload(novelId: number, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { alert("Image trop lourde (max 5MB)"); return }
+    setUploadingId(novelId)
+
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const dataUrl = reader.result as string
+      const { error } = await supabase.from("novels").update({ cover: dataUrl }).eq("id", novelId)
+      if (!error) {
+        setLocalNovels(prev => prev.map(n => n.id === novelId ? { ...n, cover: dataUrl } : n))
+      }
+      setUploadingId(null)
+    }
+    reader.readAsDataURL(file)
   }
 
   return (
@@ -84,7 +122,12 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
       {localNovels.map(n => (
         <div key={n.id} className="relative" style={{ position: "relative" }}>
           <div className="card" style={{ paddingRight: isAdmin ? "80px" : "18px" }} onClick={() => onSelect(n)}>
-            <CoverDiv cover={n.cover} />
+            <CoverDiv
+              cover={n.cover}
+              isAdmin={isAdmin}
+              uploading={uploadingId === n.id}
+              onUpload={e => handleCoverUpload(n.id, e)}
+            />
             <div>
               <div className="font-serif" style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, color: "#1a1a1a" }}>{n.title}</div>
               <div style={{ fontSize: 11, color: "#9a8878", marginTop: 4, textTransform: "uppercase", letterSpacing: 1 }}>{n.genre}</div>
