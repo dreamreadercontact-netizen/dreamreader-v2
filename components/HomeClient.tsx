@@ -29,6 +29,7 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const [selChapId, setSelChapId] = useState<number | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState(false)
+  const [zoomImage, setZoomImage] = useState<string|null>(null)
 
   const isAdmin = user?.role === "admin"
   const isSub = previewMode ? false : (user?.subscribed || isAdmin)
@@ -123,9 +124,12 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
               </div>
             </div>
             {novels.filter(n => n.status === "live").map(n => (
-              <div key={n.id} onClick={() => { setSelNovel(n); setTab("library") }}
-                style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 10, cursor: "pointer", display: "flex", gap: 14, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
-                <CoverDiv cover={n.cover} />
+              <div key={n.id}
+                style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 10, display: "flex", gap: 14, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
+                <div onClick={e => { e.stopPropagation(); if (n.cover && (n.cover.startsWith("data:") || n.cover.startsWith("http"))) setZoomImage(n.cover) }} style={{ cursor: n.cover?.startsWith("data:") || n.cover?.startsWith("http") ? "zoom-in" : "default" }}>
+                  <CoverDiv cover={n.cover} />
+                </div>
+                <div onClick={() => { setSelNovel(n); setTab("library") }} style={{ flex: 1, cursor: "pointer" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 17, fontWeight: 600, marginBottom: 4, lineHeight: 1.3, color: "#1a1a1a" }}>{n.title}</div>
                   <div style={{ fontSize: 11, color: "#9a8878", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>{n.genre}</div>
@@ -136,6 +140,14 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
                 </div>
               </div>
             ))}
+
+            {/* Image zoom modal */}
+            {zoomImage && (
+              <div onClick={() => setZoomImage(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.9)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, cursor: "zoom-out" }}>
+                <img src={zoomImage} alt="Couverture" style={{ maxWidth: "100%", maxHeight: "90vh", borderRadius: 12, boxShadow: "0 8px 40px rgba(0,0,0,.5)" }} />
+                <button onClick={() => setZoomImage(null)} style={{ position: "absolute", top: 20, right: 20, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,.15)", color: "#fff", border: "none", fontSize: 18, cursor: "pointer" }}>✕</button>
+              </div>
+            )}
             {novels.length === 0 && (
               <div style={{ textAlign: "center", color: "#c8b89a", padding: "60px 0", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
                 Les romans arrivent bientôt...
