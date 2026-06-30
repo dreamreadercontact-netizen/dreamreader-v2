@@ -153,10 +153,10 @@ export default function LibraryView({ novels, isAdmin, onSelect, onDelete }: Pro
             <label
               onClick={e => e.stopPropagation()}
               style={{
-                position: "absolute", left: 60, top: "50%", marginTop: 22, width: 22, height: 22, borderRadius: "50%",
+                position: "absolute", left: 38, top: 18, width: 22, height: 22, borderRadius: "50%",
                 background: "#1a1a1a", color: "#fff", border: "2px solid #fff", fontSize: 13, fontWeight: 700,
                 cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
-                boxShadow: "0 1px 4px rgba(0,0,0,.25)", zIndex: 10
+                boxShadow: "0 1px 4px rgba(0,0,0,.25)", zIndex: 10, pointerEvents: "auto"
               }}>
               {uploadingId === n.id ? "…" : "+"}
               <input
