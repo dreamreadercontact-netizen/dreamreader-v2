@@ -76,12 +76,13 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <button onClick={onEnter} style={{ height: 50, padding: "0 32px", borderRadius: 12, background: "#1a1a1a", color: "#fff", fontWeight: 800, fontSize: 15, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(0,0,0,.2)" }}>
-              Commencer gratuitement →
+              Essayer gratuitement 3 jours →
             </button>
             <a href={stripeUrl} target="_blank" style={{ height: 50, padding: "0 28px", borderRadius: 12, border: "1.5px solid #c8b89a", color: "#1a1a1a", fontWeight: 700, fontSize: 15, textDecoration: "none", display: "flex", alignItems: "center" }}>
               S'abonner · 5€/mois
             </a>
           </div>
+          <div style={{ fontSize: 12, color: "#9a8878", marginTop: 14 }}>✦ Accès complet pendant 3 jours, sans carte bancaire</div>
         </div>
 
         {/* Astronaut mascot small */}
@@ -208,12 +209,12 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
         <div style={{ background: "#1a1a1a", borderRadius: 16, padding: "32px 24px", marginBottom: 16, textAlign: "center" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.4)", letterSpacing: 3, textTransform: "uppercase", marginBottom: 12 }}>Rejoignez l'aventure</div>
           <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 36, fontWeight: 600, color: "#fff", letterSpacing: -2, marginBottom: 4 }}>5€ <span style={{ fontSize: 16, fontWeight: 400, color: "rgba(255,255,255,.5)" }}>/mois</span></div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.4)", marginBottom: 24 }}>Sans engagement · Annulable à tout moment</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.4)", marginBottom: 24 }}>3 jours d'essai gratuit · Sans engagement · Annulable à tout moment</div>
           <a href={stripeUrl} target="_blank" style={{ display: "block", height: 52, borderRadius: 12, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontWeight: 900, fontSize: 16, textDecoration: "none", lineHeight: "52px", boxShadow: "0 4px 20px rgba(139,111,78,.4)", marginBottom: 12 }}>
             S'abonner maintenant ✦
           </a>
           <button onClick={onEnter} style={{ width: "100%", height: 44, borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "none", color: "rgba(255,255,255,.5)", fontSize: 14, cursor: "pointer", fontWeight: 600 }}>
-            Créer un compte gratuit d'abord →
+            Essayer gratuitement 3 jours →
           </button>
         </div>
 
