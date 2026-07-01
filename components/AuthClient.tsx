@@ -127,7 +127,8 @@ export default function AuthClient() {
 
       {view === 'signup' && (
         <div className="w-full max-w-[400px]">
-          <h2 className="text-[26px] font-black tracking-[-1px] mb-[22px] text-[#1a1a1a]">Créer un compte</h2>
+          <h2 className="text-[26px] font-black tracking-[-1px] mb-[6px] text-[#1a1a1a]">Créer un compte</h2>
+          <p className="text-[13px] text-beige-500 mb-[18px]">✦ 3 jours d&apos;essai gratuit — accès complet, sans carte bancaire</p>
           <div className="field"><label className="label">Pseudo</label><input className="input" placeholder="Votre pseudo" value={name} onChange={e => setName(e.target.value)} /></div>
           <div className="field"><label className="label">Email</label><input className="input" type="email" placeholder="votre@email.com" value={email} onChange={e => setEmail(e.target.value)} /></div>
           <div className="field"><label className="label">Mot de passe</label>
