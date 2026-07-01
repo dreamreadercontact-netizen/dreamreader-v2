@@ -32,7 +32,11 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const [zoomImage, setZoomImage] = useState<string|null>(null)
 
   const isAdmin = user?.role === "admin"
-  const isSub = previewMode ? false : (user?.subscribed || isAdmin)
+  const TRIAL_DAYS = 3
+  const trialEnd = user?.created_at ? new Date(user.created_at).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000 : 0
+  const isTrial = !user?.subscribed && !isAdmin && Date.now() < trialEnd
+  const trialDaysLeft = isTrial ? Math.max(1, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000))) : 0
+  const isSub = previewMode ? false : (user?.subscribed || isTrial || isAdmin)
   const STRIPE = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK || ""
 
   function showToast(msg: string) {
@@ -89,7 +93,8 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
             {previewMode ? "✕ Quitter vue" : "👤 Vue abonné"}
           </button>
         )}
-        {isSub && !isAdmin && <span style={{ fontSize: 11, color: "#8b6f4e", fontWeight: 700 }}>★ ABONNÉ</span>}
+        {user?.subscribed && !isAdmin && <span style={{ fontSize: 11, color: "#8b6f4e", fontWeight: 700 }}>★ ABONNÉ</span>}
+        {isTrial && !previewMode && <span style={{ fontSize: 11, color: "#8b6f4e", fontWeight: 700 }}>✦ ESSAI · {trialDaysLeft}{trialDaysLeft > 1 ? " jours" : " jour"}</span>}
         {!isSub && !isAdmin && (
           <a href={STRIPE} target="_blank" style={{ height: 34, padding: "0 14px", borderRadius: 30, background: "#1a1a1a", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: 12, display: "flex", alignItems: "center" }}>
             S'abonner
@@ -168,7 +173,7 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
         )}
 
         {/* ABONNEMENT */}
-        {tab === "sub" && <SubscribeView stripeUrl={STRIPE} />}
+        {tab === "sub" && <SubscribeView stripeUrl={STRIPE} trialDaysLeft={trialDaysLeft} />}
 
         {/* PROFIL */}
         {tab === "profile" && (
