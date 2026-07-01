@@ -27,7 +27,7 @@ export interface Chapter {
   novel_id: number
   num: number
   title: string
-  content: string
+  content?: string
   free: boolean
   published_at: string
   vote_open: boolean
