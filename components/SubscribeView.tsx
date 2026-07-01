@@ -20,6 +20,7 @@ export default function SubscribeView({ stripeUrl, trialDaysLeft = 0 }: { stripe
           'Accès illimité à tous les chapitres',
           "Votes pour influencer l'histoire",
           'Commentaires et likes',
+          'Vous faites partie des premiers lecteurs ✦',
         ].map((f, i) => (
           <div key={i} className="flex gap-[10px] mb-[10px] text-[14px] text-beige-500 items-center">
             <span className="text-[#1a1a1a] font-bold">—</span>{f}
