@@ -10,7 +10,6 @@ interface Props {
 export default function LandingPage({ onEnter, stripeUrl }: Props) {
   const [votes, setVotes] = useState([62, 23, 15])
   const [voted, setVoted] = useState<number|null>(null)
-  const [readers, setReaders] = useState(1247)
   const [showAstro, setShowAstro] = useState(true)
 
   // Simulate live vote updates
@@ -24,7 +23,6 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
           newVotes[i] = Math.min(newVotes[i] + 1, 80)
           return newVotes
         })
-        setReaders(r => r + Math.floor(Math.random() * 2))
       }
     }, 3000)
     return () => clearInterval(interval)
@@ -63,7 +61,7 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
           {/* Live readers badge */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e0d8cc", borderRadius: 30, padding: "6px 16px", marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s ease-in-out infinite" }} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>{readers.toLocaleString("fr-FR")} lecteurs en ce moment</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>✦ Lancement — rejoignez les premiers lecteurs</span>
           </div>
 
           <h1 style={{ fontFamily: "Lora,Georgia,serif", fontSize: "clamp(36px,6vw,52px)", fontWeight: 600, color: "#1a1a1a", lineHeight: 1.1, letterSpacing: -2, marginBottom: 20 }}>
@@ -146,12 +144,12 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
         <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 16, overflow: "hidden", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,.06)" }}>
           <div style={{ background: "#1a1a1a", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", letterSpacing: 2, textTransform: "uppercase" }}>Vote en cours · Chapitre 1</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", letterSpacing: 2, textTransform: "uppercase" }}>Aperçu interactif · Démo</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: "#fff", marginTop: 2 }}>Que se passe-t-il ensuite ?</div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#22c55e", display: "inline-block", animation: "pulse 2s ease-in-out infinite" }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.7)" }}>{total} votes</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.7)" }}>Essayez !</span>
             </div>
           </div>
           <div style={{ padding: 16, background: "#faf7f2" }}>
