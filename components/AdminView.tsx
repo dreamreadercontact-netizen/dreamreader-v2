@@ -72,7 +72,7 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
       content: newChap.content,
       free: newChap.free,
       vote_open: opts.length > 0
-    }).select().single()
+    }).select("id, novel_id, num, title, free, published_at, vote_open, vote_closed, winner_option_id").single()
 
     if (error) {
       setLoading(false)
