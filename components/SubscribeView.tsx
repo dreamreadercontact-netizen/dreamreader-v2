@@ -1,6 +1,6 @@
 'use client'
 
-export default function SubscribeView({ stripeUrl }: { stripeUrl: string }) {
+export default function SubscribeView({ stripeUrl, trialDaysLeft = 0 }: { stripeUrl: string; trialDaysLeft?: number }) {
   return (
     <div className="max-w-[400px] mx-auto py-[44px]">
       <div className="text-[10px] text-beige-400 tracking-[2px] uppercase mb-[14px]">Abonnement</div>
@@ -8,6 +8,11 @@ export default function SubscribeView({ stripeUrl }: { stripeUrl: string }) {
         Rejoignez<br />l&apos;aventure.
       </h2>
       <p className="text-beige-500 mb-8 text-[14px] leading-[1.7]">Lisez, votez, influencez chaque chapitre.</p>
+      {trialDaysLeft > 0 && (
+        <div className="bg-[#1a1a1a] text-white rounded-[14px] p-[16px] mb-4 text-[13px] font-bold text-center">
+          ✦ Essai gratuit en cours — encore {trialDaysLeft} {trialDaysLeft > 1 ? "jours" : "jour"}
+        </div>
+      )}
       <div className="bg-white border border-beige-200 rounded-[14px] p-[26px] mb-3 shadow-sm">
         <div className="text-[48px] font-black tracking-[-3px] leading-none mb-1 text-[#1a1a1a]">5€</div>
         <div className="text-beige-400 mb-[22px] text-[13px]">/mois · sans engagement</div>
@@ -28,7 +33,7 @@ export default function SubscribeView({ stripeUrl }: { stripeUrl: string }) {
           S&apos;abonner maintenant →
         </a>
       </div>
-      <div className="text-[12px] text-beige-300 text-center">CB · Apple Pay · Stripe sécurisé</div>
+      <div className="text-[12px] text-beige-300 text-center">3 jours d&apos;essai gratuit à l&apos;inscription · CB · Apple Pay · Stripe sécurisé</div>
     </div>
   )
 }
