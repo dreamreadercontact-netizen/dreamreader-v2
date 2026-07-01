@@ -127,7 +127,7 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
               <div key={n.id}
                 style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 10, display: "flex", gap: 14, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
                 <div onClick={e => { e.stopPropagation(); if (n.cover && (n.cover.startsWith("data:") || n.cover.startsWith("http"))) setZoomImage(n.cover) }} style={{ cursor: n.cover?.startsWith("data:") || n.cover?.startsWith("http") ? "zoom-in" : "default" }}>
-                  <CoverDiv cover={n.cover} />
+                  <CoverDiv cover={n.cover} w={92} h={126} />
                 </div>
                 <div onClick={() => { setSelNovel(n); setTab("library") }} style={{ flex: 1, cursor: "pointer" }}>
                 <div style={{ flex: 1 }}>
