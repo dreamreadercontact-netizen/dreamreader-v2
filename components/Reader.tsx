@@ -67,7 +67,7 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
       chapter_id: chap.id, user_id: user.id, text: comment.trim()
     }).select().single()
     if (error) { showToast("Erreur commentaire"); return }
-    setComments((prev: any[]) => [{ ...data, profile: { name: user.name, avatar: user.avatar } }, ...prev])
+    setComments((prev: any[]) => [{ ...data, profile: { name: user.name, avatar: user.avatar, role: user.role } }, ...prev])
     setComment("")
     showToast("Commentaire publié")
   }
@@ -127,7 +127,7 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
                   <div style={{ fontSize: 10, fontWeight: 700, color: "#b0a090", letterSpacing: 2.5, textTransform: "uppercase", marginBottom: 10 }}>À vous de choisir</div>
                   <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 22, fontWeight: 600, color: "#1a1a1a" }}>Que se passe-t-il ensuite ?</div>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 12px", borderRadius: 20, background: "rgba(0,0,0,.04)", border: "1px solid rgba(0,0,0,.08)", fontSize: 10, fontWeight: 700, color: "#b0a090", marginTop: 12 }}>
-                    ✦ {total} votes
+                    {total === 0 && !chap.vote_closed ? "✦ Soyez le premier à voter" : `✦ ${total} vote${total > 1 ? "s" : ""}`}
                   </div>
                 </div>
                 <div style={{ padding: 16, background: "#faf7f2" }}>
@@ -180,16 +180,27 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
                 </div>
               )}
 
-              {comments.map((c: any) => (
+              {comments.length === 0 && (
+                <div style={{ textAlign: "center", padding: "28px 0", color: "#b0a090", fontSize: 13, fontFamily: "Lora,Georgia,serif" }}>
+                  ✦ Soyez le premier à partager votre réaction
+                </div>
+              )}
+              {comments.map((c: any) => {
+                const prof = c.profile || c.profiles
+                return (
                 <div key={c.id} style={{ display: "flex", gap: 12, padding: "16px 0", borderBottom: "1px solid #ede8e0" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: "#e0d8cc", color: "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{c.profile?.avatar || "?"}</div>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: prof?.role === "admin" ? "#1a1a1a" : "#e0d8cc", color: prof?.role === "admin" ? "#c8a96e" : "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{prof?.avatar || "?"}</div>
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 5 }}>{c.profile?.name || "Lecteur"}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 5 }}>
+                      {prof?.name || "Lecteur"}
+                      {prof?.role === "admin" && <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>✦ AUTEUR</span>}
+                    </div>
                     <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>{c.text}</div>
                     <div style={{ fontSize: 11, color: "#c8b89a", marginTop: 8 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
                   </div>
                 </div>
-              ))}
+                )
+              })}
               {comments.length === 0 && <div style={{ fontSize: 14, color: "#c8b89a", fontStyle: "italic", fontFamily: "Lora,Georgia,serif" }}>Soyez le premier à commenter.</div>}
             </div>
           </>
