@@ -34,7 +34,7 @@ export default function NovelDetail({ novel, isSub, isAdmin, onBack, onReadChapt
 
       <h2 className="font-serif text-[26px] font-semibold tracking-[-1px] mb-[6px] text-[#1a1a1a]">{novel.title}</h2>
       <p className="text-[13px] text-beige-500 mb-3 leading-[1.6]">{novel.description}</p>
-      <span className="pill pill-default mb-5 inline-block">{(novel.followers || 0).toLocaleString("fr-FR")} lecteurs</span>
+      <span className="pill pill-default mb-5 inline-block">{(novel.followers || 0) >= 10 ? `${novel.followers.toLocaleString("fr-FR")} lecteurs` : "✦ Nouveau"}</span>
 
       {(!novel.chapters || novel.chapters.length === 0) && (
         <div className="text-center text-beige-300 py-10 italic font-serif">Aucun chapitre publié pour l&apos;instant.</div>
