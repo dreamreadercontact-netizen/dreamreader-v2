@@ -43,11 +43,8 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
 
   async function handleVote(optionId: number) {
     if (!isSub && !isAdmin) return
-    const { error } = await supabase.from("user_votes").insert({
-      user_id: user.id, chapter_id: chap.id, option_id: optionId
-    })
+    const { error } = await supabase.rpc("cast_vote", { p_option_id: optionId })
     if (error) { showToast("Erreur vote"); return }
-    await supabase.from("vote_options").update({ votes: (options.find((o: any) => o.id === optionId)?.votes || 0) + 1 }).eq("id", optionId)
     setUserVoted(optionId)
     setOptions((prev: any[]) => prev.map((o: any) => o.id === optionId ? { ...o, votes: o.votes + 1 } : o))
     showToast("✦ Vote enregistré")
