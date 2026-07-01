@@ -37,7 +37,18 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
   const [comments, setComments] = useState<any[]>(chap?.comments || [])
   const [options, setOptions] = useState<any[]>(chap?.vote_options || [])
   const [userVoted, setUserVoted] = useState<number | null>(null)
+  const [content, setContent] = useState<string | null>(null)
   const total = options.reduce((s: number, o: any) => s + (o.votes || 0), 0)
+
+  useEffect(() => {
+    if (!chap?.id || !canRead) return
+    let cancelled = false
+    supabase.rpc("get_chapter_content", { p_chapter_id: chap.id }).then(({ data, error }) => {
+      if (!cancelled) setContent(error ? "" : ((data as string) || ""))
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id, canRead])
 
   if (!chap) return null
 
@@ -100,7 +111,9 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
         ) : (
           <>
             <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 18, lineHeight: 1.9, color: "#2a2018" }}>
-              {(chap.content || "").split("\n\n").map((p: string, i: number) => <p key={i} style={{ marginBottom: "1.5em" }}>{p}</p>)}
+              {content === null
+                ? <p style={{ color: "#9a8878", textAlign: "center", padding: "40px 0" }}>Chargement du chapitre...</p>
+                : content.split("\n\n").map((p: string, i: number) => <p key={i} style={{ marginBottom: "1.5em" }}>{p}</p>)}
             </div>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "44px 0", color: "#c8b89a", fontSize: 14, letterSpacing: 8 }}>
