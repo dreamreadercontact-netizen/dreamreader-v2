@@ -14,16 +14,16 @@
     -webkit-font-smoothing: antialiased;
   }
   button {
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform 0.1s ease, box-shadow 0.15s ease;
   }
   button:active {
-    transform: scale(1.05);
+    transform: scale(1.12);
   }
   a {
-    transition: transform 0.15s ease;
+    transition: transform 0.1s ease;
   }
   a:active {
-    transform: scale(1.05);
+    transform: scale(1.12);
   }
 }
 
