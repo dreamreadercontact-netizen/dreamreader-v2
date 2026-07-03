@@ -21,6 +21,7 @@ export default function AuthClient() {
   const [apprentiName, setApprontiName] = useState('')
   const [apprentiEmail, setApprontiEmail] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
 
   async function handleLogin() {
     setError(''); setLoading(true)
@@ -29,6 +30,18 @@ export default function AuthClient() {
     if (error) { setError('Email ou mot de passe incorrect.'); return }
     router.push('/')
     router.refresh()
+  }
+
+  async function handleForgot() {
+    setError('')
+    if (!email) { setError("Entrez d'abord votre email ci-dessus, puis cliquez sur « Mot de passe oublié »."); return }
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/reset-password`
+    })
+    setLoading(false)
+    if (error) { setError(error.message); return }
+    setForgotSent(true)
   }
 
   async function handleSignup() {
@@ -114,6 +127,10 @@ export default function AuthClient() {
               </button>
             </div>
           </div>
+          <p className="text-right -mt-[8px] mb-[12px] text-[12px]">
+            <span className="cursor-pointer text-beige-400 font-semibold" onClick={handleForgot}>Mot de passe oublié ?</span>
+          </p>
+          {forgotSent && <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-[13px] text-green-700 mb-3">📬 Email de réinitialisation envoyé ! Vérifiez votre boîte de réception (et vos spams).</div>}
           {error && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-600 mb-3">{error}</div>}
           <button className="btn-primary w-full h-[48px] text-[14px] rounded-xl mb-[10px]" onClick={handleLogin} disabled={loading}>
             {loading ? '...' : 'Se connecter'}
