@@ -35,10 +35,24 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
   const canRead = chap?.free || isSub || isAdmin
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState<any[]>(chap?.comments || [])
+  const [myLikes, setMyLikes] = useState<Set<number>>(new Set())
+  const [replyTo, setReplyTo] = useState<number | null>(null)
+  const [replyText, setReplyText] = useState("")
   const [options, setOptions] = useState<any[]>(chap?.vote_options || [])
   const [userVoted, setUserVoted] = useState<number | null>(null)
   const [content, setContent] = useState<string | null>(null)
   const total = options.reduce((s: number, o: any) => s + (o.votes || 0), 0)
+
+  useEffect(() => {
+    if (!user?.id) return
+    const ids = (chap?.comments || []).map((c: any) => c.id)
+    if (ids.length === 0) return
+    supabase.from("comment_likes").select("comment_id").eq("user_id", user.id).in("comment_id", ids)
+      .then(({ data }) => {
+        if (data) setMyLikes(new Set(data.map((r: any) => r.comment_id)))
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id])
 
   useEffect(() => {
     if (!chap?.id || !canRead) return
@@ -70,6 +84,38 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
     setComments((prev: any[]) => [{ ...data, profile: { name: user.name, avatar: user.avatar, role: user.role } }, ...prev])
     setComment("")
     showToast("Commentaire publié")
+  }
+
+  async function handleToggleLike(commentId: number) {
+    if (!user) return
+    const { data, error } = await supabase.rpc("toggle_comment_like", { p_comment_id: commentId })
+    if (error) { showToast("Erreur"); return }
+    setMyLikes(prev => {
+      const next = new Set(prev)
+      if (data.liked) next.add(commentId); else next.delete(commentId)
+      return next
+    })
+    setComments((prev: any[]) => prev.map((c: any) => c.id === commentId ? { ...c, likes: data.likes } : c))
+  }
+
+  async function handleReply(parentId: number) {
+    if (!replyText.trim()) return
+    const { data, error } = await supabase.from("comments").insert({
+      chapter_id: chap.id, user_id: user.id, text: replyText.trim(), parent_id: parentId
+    }).select().single()
+    if (error) { showToast("Erreur réponse"); return }
+    setComments((prev: any[]) => [...prev, { ...data, profile: { name: user.name, avatar: user.avatar, role: user.role } }])
+    setReplyText("")
+    setReplyTo(null)
+    showToast("Réponse publiée")
+  }
+
+  async function handleDeleteComment(commentId: number) {
+    if (!confirm("Supprimer ce commentaire ?")) return
+    const { error } = await supabase.from("comments").delete().eq("id", commentId)
+    if (error) { showToast("Erreur suppression"); return }
+    setComments((prev: any[]) => prev.filter((c: any) => c.id !== commentId && c.parent_id !== commentId))
+    showToast("Commentaire supprimé")
   }
 
   return (
@@ -185,20 +231,49 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
                   ✦ Soyez le premier à partager votre réaction
                 </div>
               )}
-              {comments.map((c: any) => {
-                const prof = c.profile || c.profiles
-                return (
-                <div key={c.id} style={{ display: "flex", gap: 12, padding: "16px 0", borderBottom: "1px solid #ede8e0" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 8, background: prof?.role === "admin" ? "#1a1a1a" : "#e0d8cc", color: prof?.role === "admin" ? "#c8a96e" : "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{prof?.avatar || "?"}</div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 5 }}>
-                      {prof?.name || "Lecteur"}
-                      {prof?.role === "admin" && <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>✦ AUTEUR</span>}
+              {comments.filter((c: any) => !c.parent_id).map((c: any) => {
+                const renderComment = (cc: any, isReply: boolean) => {
+                  const prof = cc.profile || cc.profiles
+                  const liked = myLikes.has(cc.id)
+                  const canDelete = isAdmin || cc.user_id === user?.id
+                  return (
+                    <div key={cc.id} style={{ display: "flex", gap: 12, padding: isReply ? "12px 0 4px" : "16px 0 4px", marginLeft: isReply ? 46 : 0 }}>
+                      <div style={{ width: isReply ? 30 : 36, height: isReply ? 30 : 36, borderRadius: 8, background: prof?.role === "admin" ? "#1a1a1a" : "#e0d8cc", color: prof?.role === "admin" ? "#c8a96e" : "#1a1a1a", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: isReply ? 11 : 13, flexShrink: 0 }}>{prof?.avatar || "?"}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 5 }}>
+                          {prof?.name || "Lecteur"}
+                          {prof?.role === "admin" && <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>✦ AUTEUR</span>}
+                        </div>
+                        <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>{cc.text}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, fontSize: 11 }}>
+                          <span style={{ color: "#c8b89a" }}>{cc.created_at ? new Date(cc.created_at).toLocaleDateString("fr-FR") : ""}</span>
+                          <span onClick={() => handleToggleLike(cc.id)} style={{ cursor: "pointer", fontWeight: 700, color: liked ? "#c0392b" : "#b0a090", userSelect: "none" }}>
+                            {liked ? "♥" : "♡"} {cc.likes || 0}
+                          </span>
+                          {!isReply && (isSub || isAdmin) && (
+                            <span onClick={() => { setReplyTo(replyTo === cc.id ? null : cc.id); setReplyText("") }} style={{ cursor: "pointer", fontWeight: 700, color: "#9a8878", userSelect: "none" }}>Répondre</span>
+                          )}
+                          {canDelete && (
+                            <span onClick={() => handleDeleteComment(cc.id)} style={{ cursor: "pointer", fontWeight: 700, color: "#b0a090", userSelect: "none" }}>Supprimer</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>{c.text}</div>
-                    <div style={{ fontSize: 11, color: "#c8b89a", marginTop: 8 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
+                  )
+                }
+                const replies = comments.filter((r: any) => r.parent_id === c.id)
+                return (
+                  <div key={c.id} style={{ borderBottom: "1px solid #ede8e0", paddingBottom: 12 }}>
+                    {renderComment(c, false)}
+                    {replies.map((r: any) => renderComment(r, true))}
+                    {replyTo === c.id && (
+                      <div style={{ display: "flex", gap: 8, marginLeft: 46, marginTop: 8 }}>
+                        <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Votre réponse..." rows={1}
+                          style={{ flex: 1, border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "8px 12px", fontFamily: "Lora,Georgia,serif", fontSize: 13, lineHeight: 1.6, outline: "none", resize: "vertical" }} />
+                        <button onClick={() => handleReply(c.id)} style={{ height: 34, padding: "0 14px", borderRadius: 20, border: "none", background: "#1a1a1a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", alignSelf: "flex-end" }}>Publier</button>
+                      </div>
+                    )}
                   </div>
-                </div>
                 )
               })}
               {comments.length === 0 && <div style={{ fontSize: 14, color: "#c8b89a", fontStyle: "italic", fontFamily: "Lora,Georgia,serif" }}>Soyez le premier à commenter.</div>}
