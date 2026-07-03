@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://dreamreader-v2.vercel.app'),
   title: 'DreamReader — Romans interactifs',
   description: 'Lisez, votez, influencez. La plateforme de romans interactifs en français.',
   keywords: 'romans, lecture, interactif, vote, fiction française',
@@ -25,7 +27,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#f5f0e8" />
       </head>
-      <body>{children}</body>
+      <body>{children}<Analytics /></body>
     </html>
   )
 }
