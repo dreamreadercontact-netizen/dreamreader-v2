@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import OnboardingTip from "./OnboardingTip"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -30,6 +30,21 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const [toast, setToast] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState(false)
   const [zoomImage, setZoomImage] = useState<string|null>(null)
+  const [resume, setResume] = useState<any>(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    supabase.from("reading_progress").select("chapter_id, scroll_pct, updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1)
+      .then(({ data }) => {
+        const row = data?.[0]
+        if (!row) return
+        for (const n of novels) {
+          const c = (n.chapters || []).find((ch: any) => ch.id === row.chapter_id)
+          if (c) { setResume({ novel: n, chap: c, pct: row.scroll_pct }); break }
+        }
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const isAdmin = user?.role === "admin"
   const TRIAL_DAYS = 3
@@ -128,6 +143,18 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
                 )}
               </div>
             </div>
+            {resume && (
+              <div onClick={() => { setSelNovel(resume.novel); setSelChapId(resume.chap.id) }}
+                style={{ background: "#1a1a1a", borderRadius: 14, padding: "16px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.15)" }}>
+                <div style={{ fontSize: 22 }}>▶</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#c8a96e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 3 }}>Reprendre la lecture</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{resume.chap.title}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{resume.novel.title} · {Math.round((resume.pct || 0) * 100)} %</div>
+                </div>
+                <div style={{ color: "rgba(255,255,255,.4)", fontSize: 18 }}>→</div>
+              </div>
+            )}
             {novels.filter(n => n.status === "live").map(n => (
               <div key={n.id}
                 style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 10, display: "flex", gap: 14, alignItems: "center", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
