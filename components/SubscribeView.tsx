@@ -35,6 +35,7 @@ export default function SubscribeView({ stripeUrl, trialDaysLeft = 0 }: { stripe
         </a>
       </div>
       <div className="text-[12px] text-beige-300 text-center">3 jours d&apos;essai gratuit à l&apos;inscription · CB · Apple Pay · Stripe sécurisé</div>
+      <div className="text-[11px] text-beige-300 text-center mt-2">En vous abonnant, vous acceptez nos <a href="/cgu" className="underline">Conditions générales</a>.</div>
     </div>
   )
 }
