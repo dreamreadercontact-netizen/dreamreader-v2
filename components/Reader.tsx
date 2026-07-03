@@ -64,6 +64,45 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chap?.id, canRead])
 
+  const [initialPct, setInitialPct] = useState(0)
+
+  useEffect(() => {
+    if (!user?.id || !chap?.id) return
+    supabase.from("reading_progress").select("scroll_pct").eq("user_id", user.id).eq("chapter_id", chap.id).maybeSingle()
+      .then(({ data }) => { if (data?.scroll_pct) setInitialPct(data.scroll_pct) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id])
+
+  useEffect(() => {
+    if (content === null || initialPct <= 0.02) return
+    const t = setTimeout(() => {
+      const h = document.documentElement.scrollHeight - window.innerHeight
+      if (h > 0) window.scrollTo({ top: h * initialPct })
+    }, 150)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content])
+
+  useEffect(() => {
+    if (!user?.id || !chap?.id || content === null) return
+    let last = -1
+    let saveTimer: any = null
+    const onScroll = () => {
+      const h = document.documentElement.scrollHeight - window.innerHeight
+      if (h <= 0) return
+      const pct = Math.min(1, Math.max(0, window.scrollY / h))
+      if (Math.abs(pct - last) < 0.05) return
+      last = pct
+      clearTimeout(saveTimer)
+      saveTimer = setTimeout(() => {
+        supabase.from("reading_progress").upsert({ user_id: user.id, chapter_id: chap.id, scroll_pct: pct, updated_at: new Date().toISOString() })
+      }, 800)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => { window.removeEventListener("scroll", onScroll); clearTimeout(saveTimer) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, chap?.id])
+
   if (!chap) return null
 
   async function handleVote(optionId: number) {
