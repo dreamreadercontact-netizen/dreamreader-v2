@@ -102,7 +102,7 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
   const tabs: ["dash"|"publish"|"chapters"|"candidatures"|"readers", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["readers", "Lecteurs"], ["candidatures", "Candidatures"]]
 
   async function loadReaders() {
-    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
+    const { data, error } = await supabase.rpc("admin_list_profiles")
     if (!error && data) { setReaders(data); setReadersLoaded(true) }
   }
 
