@@ -1,7 +1,27 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { Profile } from '@/lib/types'
+import { createClient } from '@/lib/supabase/client'
 
 export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile; isSub: boolean; isAdmin: boolean; onLogout: () => void }) {
+  const supabase = createClient()
+  const [notif, setNotif] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    supabase.from('profiles').select('notify_new_chapter').eq('id', user.id).single()
+      .then(({ data }) => setNotif(data?.notify_new_chapter ?? true))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
+
+  async function toggleNotif() {
+    if (notif === null) return
+    const next = !notif
+    setNotif(next)
+    const { error } = await supabase.from('profiles').update({ notify_new_chapter: next }).eq('id', user.id)
+    if (error) setNotif(!next)
+  }
+
   return (
     <div>
       <div className="bg-white border border-beige-200 rounded-[14px] p-5 shadow-sm">
@@ -13,7 +33,19 @@ export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile;
         {isSub && !isAdmin && (
           <div className="inline-block px-3 py-1 rounded-[20px] bg-[#1a1a1a] text-white text-[12px] font-bold mb-3">★ ABONNÉ</div>
         )}
-        <br />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 0', borderTop: '1px solid #ede8e0', marginTop: 6, marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>📖 Nouveaux chapitres</div>
+            <div style={{ fontSize: 11, color: '#9a8878', marginTop: 2 }}>Recevoir un email à chaque parution</div>
+          </div>
+          <button
+            onClick={toggleNotif}
+            aria-label="Activer ou désactiver les notifications"
+            style={{ width: 46, height: 26, borderRadius: 20, border: 'none', cursor: 'pointer', position: 'relative', background: notif ? '#1a1a1a' : '#d8cfc4', transition: 'background .2s', flexShrink: 0 }}
+          >
+            <span style={{ position: 'absolute', top: 3, left: notif ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+          </button>
+        </div>
         <button className="btn-outline rounded-xl text-[13px]" onClick={onLogout}>Se déconnecter</button>
       </div>
     </div>
