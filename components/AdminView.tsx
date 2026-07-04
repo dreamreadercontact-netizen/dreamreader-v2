@@ -97,6 +97,20 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
     setNewChap({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
     setLoading(false)
     showToast("✓ Chapitre publié avec succès !")
+
+    // Notifie les lecteurs par email (nécessite RESEND_API_KEY dans Vercel)
+    try {
+      const res = await fetch("/api/notify-chapter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chapterTitle: chapter.title,
+          novelTitle: novels.find(n => String(n.id) === String(novelId))?.title || "DreamReader"
+        })
+      })
+      const j = await res.json().catch(() => null)
+      if (res.ok && j?.sent > 0) showToast(`📧 ${j.sent} lecteur${j.sent > 1 ? "s" : ""} notifié${j.sent > 1 ? "s" : ""} par email`)
+    } catch {}
   }
 
   const tabs: ["dash"|"publish"|"chapters"|"candidatures"|"readers", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["readers", "Lecteurs"], ["candidatures", "Candidatures"]]
