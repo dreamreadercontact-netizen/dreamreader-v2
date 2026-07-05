@@ -220,6 +220,7 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
         <div style={{ textAlign: "center", padding: "20px 0 40px", fontSize: 12, color: "#c8b89a" }}>
           ✦ DreamReader · Romans interactifs en français
           <div style={{ marginTop: 10, display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+            <a href="/telecharger" style={{ color: "#b0a090", textDecoration: "none" }}>📲 Installer l'app</a>
             <a href="/cgu" style={{ color: "#b0a090", textDecoration: "none" }}>Conditions générales</a>
             <a href="/confidentialite" style={{ color: "#b0a090", textDecoration: "none" }}>Confidentialité</a>
             <a href="/mentions-legales" style={{ color: "#b0a090", textDecoration: "none" }}>Mentions légales</a>
