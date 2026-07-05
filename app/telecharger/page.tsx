@@ -6,11 +6,14 @@ export default function TelechargerPage() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop'>('desktop')
   const [installed, setInstalled] = useState(false)
+  const [inApp, setInApp] = useState(false)
 
   useEffect(() => {
     const ua = navigator.userAgent
     if (/iPhone|iPad|iPod/i.test(ua)) setPlatform('ios')
     else if (/Android/i.test(ua)) setPlatform('android')
+
+    if (/FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram|WhatsApp|TikTok|Snapchat|Line\//i.test(ua)) setInApp(true)
 
     if (window.matchMedia('(display-mode: standalone)').matches) setInstalled(true)
 
@@ -64,7 +67,16 @@ export default function TelechargerPage() {
             </div>
           )}
 
-          {!installed && platform === 'android' && (
+          {!installed && inApp && (
+            <div style={{ background: '#1a1a1a', color: '#fff', borderRadius: 12, padding: '18px 20px', marginBottom: 18, textAlign: 'left' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8, fontFamily: 'system-ui,sans-serif' }}>⚠️ Vous êtes dans le navigateur de Messenger / Instagram</div>
+              <div style={{ fontSize: 13, lineHeight: 1.7, color: 'rgba(255,255,255,.85)' }}>
+                L&apos;installation n&apos;est pas possible ici. Appuyez sur le menu <strong>⋮</strong> (ou <strong>⋯</strong>) en haut à droite, puis choisissez <strong>« Ouvrir dans Chrome »</strong> (ou « Ouvrir dans le navigateur ») — et l&apos;installation se lancera.
+              </div>
+            </div>
+          )}
+
+          {!installed && !inApp && platform === 'android' && (
             <>
               {deferredPrompt ? (
                 <button
@@ -83,7 +95,7 @@ export default function TelechargerPage() {
             </>
           )}
 
-          {!installed && platform === 'ios' && (
+          {!installed && !inApp && platform === 'ios' && (
             <div style={{ textAlign: 'left' }}>
               <div style={stepStyle}><span style={numStyle}>1</span><span style={{ fontSize: 14, color: '#5a4a3a', lineHeight: 1.6 }}>Ouvrez cette page dans <strong>Safari</strong></span></div>
               <div style={stepStyle}><span style={numStyle}>2</span><span style={{ fontSize: 14, color: '#5a4a3a', lineHeight: 1.6 }}>Appuyez sur le bouton <strong>Partager</strong> (le carré avec la flèche ↑)</span></div>
