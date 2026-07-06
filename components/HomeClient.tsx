@@ -10,6 +10,7 @@ import AdminView from "./AdminView"
 import Reader from "./Reader"
 import NovelDetail from "./NovelDetail"
 import SubscribeView from "./SubscribeView"
+import NotificationBell from "./NotificationBell"
 
 type Tab = "home" | "library" | "books" | "admin" | "sub" | "profile"
 
@@ -114,6 +115,18 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
           <a href={STRIPE} target="_blank" style={{ height: 34, padding: "0 14px", borderRadius: 30, background: "#1a1a1a", color: "#fff", fontWeight: 700, textDecoration: "none", fontSize: 12, display: "flex", alignItems: "center" }}>
             S'abonner
           </a>
+        )}
+        {user?.id && !user?.is_anonymous && (
+          <NotificationBell
+            userId={user.id}
+            onOpenChapter={(chapterId) => {
+              // Cherche le roman contenant ce chapitre et l'ouvre
+              for (const n of novels) {
+                const c = n.chapters?.find((ch: any) => ch.id === chapterId)
+                if (c) { setSelNovel(n); setSelChapId(chapterId); goTo("home"); return }
+              }
+            }}
+          />
         )}
         <button onClick={logout} style={{ height: 34, padding: "0 14px", borderRadius: 30, border: "1.5px solid #d8cfc4", background: "none", fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#1a1a1a" }}>Quitter</button>
       </nav>
