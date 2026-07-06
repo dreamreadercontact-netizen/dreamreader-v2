@@ -81,6 +81,10 @@ export default function LandingPage({ onEnter, stripeUrl }: Props) {
             </a>
           </div>
           <div style={{ fontSize: 12, color: "#9a8878", marginTop: 14 }}>✦ Accès complet pendant 3 jours, sans carte bancaire</div>
+          <a href="/telecharger" style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 22, padding: "11px 22px", borderRadius: 30, background: "#fff", border: "1.5px solid #d8cfc4", color: "#1a1a1a", fontWeight: 700, fontSize: 14, textDecoration: "none", boxShadow: "0 2px 10px rgba(0,0,0,.05)" }}>
+            📲 Installer l&apos;application
+          </a>
+          <div style={{ fontSize: 11, color: "#b0a090", marginTop: 8 }}>Gratuit · Sur votre écran d&apos;accueil, comme une vraie app</div>
         </div>
 
         {/* Astronaut mascot small */}
