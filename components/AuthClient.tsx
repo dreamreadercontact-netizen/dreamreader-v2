@@ -20,6 +20,10 @@ export default function AuthClient() {
   const [apprentiSent, setApprontiSent] = useState(false)
   const [apprentiName, setApprontiName] = useState('')
   const [apprentiEmail, setApprontiEmail] = useState('')
+  const [apprentiPitch, setApprentiPitch] = useState('')
+  const [apprentiSample, setApprentiSample] = useState('')
+  const [apprentiSampleUrl, setApprentiSampleUrl] = useState('')
+  const [apprentiError, setApprentiError] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
 
@@ -67,12 +71,22 @@ export default function AuthClient() {
   }
 
   async function submitCandidature() {
-    if (!apprentiName || !apprentiEmail) return
-    await fetch('/api/candidatures', {
+    setApprentiError('')
+    if (!apprentiName || !apprentiEmail) { setApprentiError('Nom et email requis.'); return }
+    if (!apprentiSample.trim() && !apprentiSampleUrl.trim()) {
+      setApprentiError('Ajoutez un extrait de votre écriture OU un lien vers une œuvre.'); return
+    }
+    setLoading(true)
+    const res = await fetch('/api/candidatures', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: apprentiName, email: apprentiEmail })
+      body: JSON.stringify({
+        name: apprentiName, email: apprentiEmail,
+        pitch: apprentiPitch, writingSample: apprentiSample, sampleUrl: apprentiSampleUrl,
+      })
     })
+    setLoading(false)
+    if (!res.ok) { setApprentiError('Une erreur est survenue. Réessayez.'); return }
     setApprontiSent(true)
   }
 
@@ -187,16 +201,20 @@ export default function AuthClient() {
           {!apprentiSent ? (
             <>
               <div className="text-[64px] mb-3">📜</div>
-              <h2 className="text-[22px] font-black mb-4 text-[#1a1a1a]">Êtes-vous ici par hasard ?</h2>
-              <div className="bg-beige-200 rounded-xl p-[18px] mb-[18px] border border-beige-300 text-[14px] text-beige-600 text-left leading-[1.8]">
-                <p>Si oui... <strong className="text-[#1a1a1a]">partez, c&apos;est mieux.</strong></p>
-                <p className="mt-2">Si vous êtes un futur auteur DreamReader... <strong className="text-[#1a1a1a]">✦ Bienvenue. ✦</strong></p>
+              <h2 className="text-[22px] font-black mb-2 text-[#1a1a1a]">Devenez auteur DreamReader</h2>
+              <div className="bg-beige-200 rounded-xl p-[18px] mb-[18px] border border-beige-300 text-[13px] text-beige-600 text-left leading-[1.7]">
+                Envoyez votre candidature pour publier vos romans sur DreamReader. Racontez-nous qui vous êtes et montrez-nous votre plume — chaque candidature est lue personnellement. <strong className="text-[#1a1a1a]">✦</strong>
               </div>
               <div className="text-left">
-                <div className="field"><label className="label">Nom d&apos;auteur</label><input className="input" value={apprentiName} onChange={e => setApprontiName(e.target.value)} /></div>
-                <div className="field"><label className="label">Email</label><input className="input" type="email" value={apprentiEmail} onChange={e => setApprontiEmail(e.target.value)} /></div>
+                <div className="field"><label className="label">Nom d&apos;auteur</label><input className="input" value={apprentiName} onChange={e => setApprontiName(e.target.value)} placeholder="Votre nom ou pseudonyme" /></div>
+                <div className="field"><label className="label">Email</label><input className="input" type="email" value={apprentiEmail} onChange={e => setApprontiEmail(e.target.value)} placeholder="pour vous recontacter" /></div>
+                <div className="field"><label className="label">Présentation (optionnel)</label><textarea className="input" rows={3} value={apprentiPitch} onChange={e => setApprentiPitch(e.target.value)} placeholder="Parlez-nous de vous et de vos projets d'écriture..." style={{resize:'vertical',minHeight:70,fontFamily:'inherit'}} /></div>
+                <div style={{fontSize:12,color:'#9a8878',fontWeight:700,margin:'6px 0 4px'}}>Montrez-nous votre écriture ✦ (au moins un des deux)</div>
+                <div className="field"><label className="label">Extrait de quelques pages</label><textarea className="input" rows={5} value={apprentiSample} onChange={e => setApprentiSample(e.target.value)} placeholder="Collez ici un extrait d'un texte que vous avez écrit..." style={{resize:'vertical',minHeight:100,fontFamily:'Lora,Georgia,serif',lineHeight:1.6}} /></div>
+                <div className="field"><label className="label">OU un lien vers une œuvre</label><input className="input" type="url" value={apprentiSampleUrl} onChange={e => setApprentiSampleUrl(e.target.value)} placeholder="https://wattpad.com/... ou un lien Google Docs" /></div>
               </div>
-              <button className="btn-primary w-full h-[46px] text-[14px] rounded-xl mb-[10px]" onClick={submitCandidature}>✦ Soumettre ma candidature</button>
+              {apprentiError && <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-600 mb-3">{apprentiError}</div>}
+              <button className="btn-primary w-full h-[46px] text-[14px] rounded-xl mb-[10px]" onClick={submitCandidature} disabled={loading}>{loading ? '...' : '✦ Soumettre ma candidature'}</button>
               <button className="btn-outline w-full h-[42px] text-[13px] rounded-xl" onClick={() => setView('landing')}>← Retour</button>
             </>
           ) : (
@@ -204,7 +222,7 @@ export default function AuthClient() {
               <div className="text-[64px] mb-3">✉️</div>
               <h2 className="text-[22px] font-black mb-3 text-[#1a1a1a]">Candidature envoyée</h2>
               <p className="text-beige-400 text-[14px] leading-[1.8] mb-5">Si votre candidature est acceptée, vous recevrez un accès.</p>
-              <button className="btn-outline w-full h-[42px] text-[13px] rounded-xl" onClick={() => { setView('landing'); setApprontiSent(false); setApprontiName(''); setApprontiEmail('') }}>← Retour</button>
+              <button className="btn-outline w-full h-[42px] text-[13px] rounded-xl" onClick={() => { setView('landing'); setApprontiSent(false); setApprontiName(''); setApprontiEmail(''); setApprentiPitch(''); setApprentiSample(''); setApprentiSampleUrl('') }}>← Retour</button>
             </>
           )}
         </div>
