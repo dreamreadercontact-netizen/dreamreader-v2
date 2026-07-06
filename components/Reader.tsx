@@ -34,6 +34,41 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
   const prog = useScrollProgress()
   const canRead = chap?.free || isSub || isAdmin
   const [ad, setAd] = useState<any>(null)
+  const [reactions, setReactions] = useState<Record<string, number>>({})
+  const [myReaction, setMyReaction] = useState<string | null>(null)
+  const EMOJIS = ["👍", "😍", "🥹", "🫠", "😡"]
+
+  useEffect(() => {
+    if (!chap?.id) return
+    supabase.rpc("chapter_reaction_counts", { p_chapter_id: chap.id }).then(({ data }) => {
+      if (data) {
+        const map: Record<string, number> = {}
+        data.forEach((r: any) => { map[r.emoji] = Number(r.count) })
+        setReactions(map)
+      }
+    })
+    if (user?.id) {
+      supabase.from("chapter_reactions").select("emoji").eq("chapter_id", chap.id).eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => setMyReaction(data?.emoji || null))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id])
+
+  async function handleReact(emoji: string) {
+    if (!user) return
+    const prev = myReaction
+    const { data, error } = await supabase.rpc("react_chapter", { p_chapter_id: chap.id, p_emoji: emoji })
+    if (error) { showToast("Erreur"); return }
+    const newReaction = data.emoji as string | null
+    setMyReaction(newReaction)
+    // Met à jour les compteurs localement
+    setReactions(r => {
+      const next = { ...r }
+      if (prev) next[prev] = Math.max((next[prev] || 1) - 1, 0)
+      if (newReaction) next[newReaction] = (next[newReaction] || 0) + 1
+      return next
+    })
+  }
 
   useEffect(() => {
     // Les pubs ne s'affichent qu'aux lecteurs non-abonnés (pas admin, pas abonné)
@@ -215,6 +250,31 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "44px 0", color: "#c8b89a", fontSize: 14, letterSpacing: 8 }}>
               <div style={{ flex: 1, height: 1, background: "#e0d8cc" }} />✦ ✦ ✦<div style={{ flex: 1, height: 1, background: "#e0d8cc" }} />
+            </div>
+
+            {/* RÉACTIONS EMOJI */}
+            <div style={{ textAlign: "center", marginBottom: 40 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#b0a090", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>Votre réaction à ce chapitre</div>
+              <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+                {EMOJIS.map(emoji => {
+                  const count = reactions[emoji] || 0
+                  const mine = myReaction === emoji
+                  return (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReact(emoji)}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 30, cursor: "pointer",
+                        border: "1.5px solid", borderColor: mine ? "#8b6f4e" : "#e0d8cc",
+                        background: mine ? "#faf5ec" : "#fff", fontSize: 20, transition: "transform .1s",
+                      }}
+                    >
+                      <span>{emoji}</span>
+                      {count > 0 && <span style={{ fontSize: 13, fontWeight: 700, color: mine ? "#8b6f4e" : "#9a8878" }}>{count}</span>}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* PUBLICITÉ (non-abonnés uniquement) */}
