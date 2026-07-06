@@ -93,7 +93,7 @@ export default function NotificationBell({ userId, onOpenChapter }: { userId: st
       </button>
 
       {open && (
-        <div style={{ position: "absolute", top: 46, right: 0, width: 320, maxWidth: "calc(100vw - 32px)", maxHeight: 420, overflow: "auto", background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,.15)", zIndex: 100 }}>
+        <div style={{ position: "fixed", top: 60, right: 12, left: "auto", width: 320, maxWidth: "calc(100vw - 24px)", maxHeight: 420, overflow: "auto", background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, boxShadow: "0 12px 40px rgba(0,0,0,.15)", zIndex: 100 }}>
           <div style={{ padding: "14px 16px", borderBottom: "1px solid #ede8e0", fontSize: 13, fontWeight: 800, color: "#1a1a1a", position: "sticky", top: 0, background: "#fff" }}>
             Notifications
           </div>
