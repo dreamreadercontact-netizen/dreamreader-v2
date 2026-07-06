@@ -12,9 +12,17 @@ interface Props {
 
 export default function AdminView({ novels, setNovels, showToast }: Props) {
   const supabase = createClient()
-  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters"|"candidatures"|"readers">("dash")
+  const [adminTab, setAdminTab] = useState<"dash"|"publish"|"chapters"|"candidatures"|"readers"|"ads"|"partners">("dash")
   const [readers, setReaders] = useState<any[]>([])
   const [readersLoaded, setReadersLoaded] = useState(false)
+  const [candidatures, setCandidatures] = useState<any[]>([])
+  const [candLoaded, setCandLoaded] = useState(false)
+  const [openCand, setOpenCand] = useState<number | null>(null)
+  const [adRequests, setAdRequests] = useState<any[]>([])
+  const [adReqLoaded, setAdReqLoaded] = useState(false)
+  const [ads, setAds] = useState<any[]>([])
+  const [adsLoaded, setAdsLoaded] = useState(false)
+  const [newAd, setNewAd] = useState({ title: "", image_url: "", link_url: "" })
   const [newChap, setNewChap] = useState({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
   const [showNewNovel, setShowNewNovel] = useState(false)
   const [newNovel, setNewNovel] = useState({ title: "", genre: "", desc: "", status: "live" })
@@ -113,11 +121,58 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
     } catch {}
   }
 
-  const tabs: ["dash"|"publish"|"chapters"|"candidatures"|"readers", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["readers", "Lecteurs"], ["candidatures", "Candidatures"]]
+  const tabs: ["dash"|"publish"|"chapters"|"candidatures"|"readers"|"ads"|"partners", string][] = [["dash", "Tableau"], ["publish", "Publier"], ["chapters", "Chapitres"], ["readers", "Lecteurs"], ["candidatures", "Candidatures"], ["partners", "Demandes pub"], ["ads", "Publicités"]]
 
   async function loadReaders() {
     const { data, error } = await supabase.rpc("admin_list_profiles")
     if (!error && data) { setReaders(data); setReadersLoaded(true) }
+  }
+
+  async function loadCandidatures() {
+    const res = await fetch("/api/candidatures")
+    if (res.ok) { setCandidatures(await res.json()); setCandLoaded(true) }
+  }
+
+  async function loadAdRequests() {
+    const res = await fetch("/api/ad-requests")
+    if (res.ok) { setAdRequests(await res.json()); setAdReqLoaded(true) }
+  }
+
+  async function loadAds() {
+    const { data, error } = await supabase.from("ads").select("*").order("created_at", { ascending: false })
+    if (!error && data) { setAds(data); setAdsLoaded(true) }
+  }
+
+  async function createAd() {
+    if (!newAd.title || !newAd.link_url) { showToast("Titre et lien requis"); return }
+    const { data, error } = await supabase.from("ads").insert({
+      title: newAd.title, image_url: newAd.image_url || null, link_url: newAd.link_url, active: true
+    }).select().single()
+    if (error) { showToast("Erreur: " + error.message); return }
+    setAds(prev => [data, ...prev])
+    setNewAd({ title: "", image_url: "", link_url: "" })
+    showToast("✓ Publicité ajoutée")
+  }
+
+  async function toggleAd(id: number, active: boolean) {
+    const { error } = await supabase.from("ads").update({ active: !active }).eq("id", id)
+    if (error) { showToast("Erreur"); return }
+    setAds(prev => prev.map(a => a.id === id ? { ...a, active: !active } : a))
+  }
+
+  async function deleteAd(id: number) {
+    if (!confirm("Supprimer cette publicité ?")) return
+    const { error } = await supabase.from("ads").delete().eq("id", id)
+    if (error) { showToast("Erreur"); return }
+    setAds(prev => prev.filter(a => a.id !== id))
+    showToast("Publicité supprimée")
+  }
+
+  async function setCandStatus(id: number, status: string) {
+    const { error } = await supabase.from("candidatures").update({ status }).eq("id", id)
+    if (error) { showToast("Erreur"); return }
+    setCandidatures(prev => prev.map(c => c.id === id ? { ...c, status } : c))
+    showToast(status === "accepted" ? "✓ Candidature acceptée" : "Candidature refusée")
   }
 
   return (
@@ -125,7 +180,7 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
       <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: -1, marginBottom: 16, color: "#1a1a1a" }}>Administration</h2>
       <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
         {tabs.map(([id, label]) => (
-          <button key={id} onClick={() => { setAdminTab(id); if (id === "readers" && !readersLoaded) loadReaders() }}
+          <button key={id} onClick={() => { setAdminTab(id); if (id === "readers" && !readersLoaded) loadReaders(); if (id === "candidatures" && !candLoaded) loadCandidatures(); if (id === "partners" && !adReqLoaded) loadAdRequests(); if (id === "ads" && !adsLoaded) loadAds() }}
             style={{ padding: "8px 16px", borderRadius: 30, border: "1.5px solid", borderColor: adminTab === id ? "#1a1a1a" : "#d8cfc4", background: adminTab === id ? "#1a1a1a" : "none", color: adminTab === id ? "#fff" : "#9a8878", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {label}
           </button>
@@ -257,10 +312,101 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
 
       {adminTab === "candidatures" && (
         <div>
-          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>Candidatures d'auteurs reçues</div>
-          <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
-            Aucune candidature pour l'instant.
+          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>Candidatures d&apos;auteurs reçues</div>
+          {candidatures.map((c) => (
+            <div key={c.id} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a" }}>{c.name}</div>
+                  <div style={{ fontSize: 12, color: "#9a8878", marginTop: 2 }}>{c.email}</div>
+                  <div style={{ fontSize: 11, color: "#c8b89a", marginTop: 4 }}>{c.created_at ? new Date(c.created_at).toLocaleDateString("fr-FR") : ""}</div>
+                </div>
+                <span style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                  background: c.status === "accepted" ? "#dcfce7" : c.status === "refused" ? "#fee2e2" : "#f3f0eb",
+                  color: c.status === "accepted" ? "#16a34a" : c.status === "refused" ? "#dc2626" : "#9a8878" }}>
+                  {c.status === "accepted" ? "Acceptée" : c.status === "refused" ? "Refusée" : "En attente"}
+                </span>
+              </div>
+              {c.pitch && <div style={{ fontSize: 13, color: "#5a4a3a", marginTop: 10, fontStyle: "italic" }}>{c.pitch}</div>}
+              {(c.writing_sample || c.sample_url) && (
+                <div style={{ marginTop: 10 }}>
+                  <button onClick={() => setOpenCand(openCand === c.id ? null : c.id)} style={{ fontSize: 12, fontWeight: 700, color: "#8b6f4e", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                    {openCand === c.id ? "▼ Masquer l'extrait" : "▶ Voir l'écriture"}
+                  </button>
+                  {openCand === c.id && (
+                    <div style={{ marginTop: 8 }}>
+                      {c.sample_url && <div style={{ fontSize: 13, marginBottom: 8 }}>🔗 <a href={c.sample_url} target="_blank" rel="noopener" style={{ color: "#8b6f4e" }}>{c.sample_url}</a></div>}
+                      {c.writing_sample && <div style={{ background: "#f5f0e8", borderRadius: 8, padding: 14, fontSize: 13, lineHeight: 1.7, color: "#5a4a3a", fontFamily: "Lora,Georgia,serif", whiteSpace: "pre-wrap", maxHeight: 300, overflow: "auto" }}>{c.writing_sample}</div>}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                <button onClick={() => setCandStatus(c.id, "accepted")} style={{ flex: 1, height: 36, borderRadius: 10, border: "none", background: "#1a1a1a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>✓ Accepter</button>
+                <button onClick={() => setCandStatus(c.id, "refused")} style={{ flex: 1, height: 36, borderRadius: 10, border: "1.5px solid #d8cfc4", background: "none", color: "#9a8878", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Refuser</button>
+              </div>
+            </div>
+          ))}
+          {candidatures.length === 0 && candLoaded && (
+            <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+              Aucune candidature pour l&apos;instant.
+            </div>
+          )}
+        </div>
+      )}
+
+      {adminTab === "partners" && (
+        <div>
+          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>Demandes de partenariat publicitaire reçues</div>
+          {adRequests.map((r) => (
+            <div key={r.id} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a" }}>{r.company}</div>
+                  <div style={{ fontSize: 12, color: "#9a8878", marginTop: 2 }}>{r.contact_email}</div>
+                  {r.website && <div style={{ fontSize: 12, marginTop: 2 }}>🔗 <a href={r.website} target="_blank" rel="noopener" style={{ color: "#8b6f4e" }}>{r.website}</a></div>}
+                  {r.budget && <div style={{ fontSize: 12, color: "#9a8878", marginTop: 2 }}>Budget : {r.budget}</div>}
+                </div>
+                <div style={{ fontSize: 11, color: "#c8b89a" }}>{r.created_at ? new Date(r.created_at).toLocaleDateString("fr-FR") : ""}</div>
+              </div>
+              {r.message && <div style={{ fontSize: 13, color: "#5a4a3a", marginTop: 10, background: "#f5f0e8", borderRadius: 8, padding: 12 }}>{r.message}</div>}
+              <div style={{ fontSize: 12, color: "#9a8878", marginTop: 10 }}>Pour répondre : <a href={`mailto:${r.contact_email}`} style={{ color: "#8b6f4e", fontWeight: 700 }}>Envoyer un email</a></div>
+            </div>
+          ))}
+          {adRequests.length === 0 && adReqLoaded && (
+            <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+              Aucune demande pour l&apos;instant.
+            </div>
+          )}
+        </div>
+      )}
+
+      {adminTab === "ads" && (
+        <div>
+          <div style={{ fontSize: 13, color: "#b0a090", marginBottom: 16 }}>Publicités affichées aux lecteurs non-abonnés</div>
+          <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 18, marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a1a", marginBottom: 12 }}>Ajouter une publicité</div>
+            <input value={newAd.title} onChange={e => setNewAd({ ...newAd, title: e.target.value })} placeholder="Titre / nom de l'annonceur" style={{ width: "100%", border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+            <input value={newAd.image_url} onChange={e => setNewAd({ ...newAd, image_url: e.target.value })} placeholder="URL de l'image (optionnel)" style={{ width: "100%", border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+            <input value={newAd.link_url} onChange={e => setNewAd({ ...newAd, link_url: e.target.value })} placeholder="Lien de destination (https://...)" style={{ width: "100%", border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "10px 12px", fontSize: 13, marginBottom: 10, boxSizing: "border-box" }} />
+            <button onClick={createAd} style={{ width: "100%", height: 40, borderRadius: 10, border: "none", background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Ajouter</button>
           </div>
+          {ads.map((a) => (
+            <div key={a.id} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 14, marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
+              {a.image_url && <div style={{ width: 48, height: 48, borderRadius: 8, background: `#f5f0e8 url(${a.image_url}) center/cover`, flexShrink: 0, border: "1px solid #e0d8cc" }} />}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a" }}>{a.title}</div>
+                <div style={{ fontSize: 11, color: "#9a8878", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.link_url}</div>
+              </div>
+              <button onClick={() => toggleAd(a.id, a.active)} style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 700, border: "none", cursor: "pointer", background: a.active ? "#dcfce7" : "#f3f0eb", color: a.active ? "#16a34a" : "#9a8878" }}>{a.active ? "Active" : "Inactive"}</button>
+              <button onClick={() => deleteAd(a.id)} style={{ background: "none", border: "none", color: "#c8b89a", cursor: "pointer", fontSize: 16 }}>✕</button>
+            </div>
+          ))}
+          {ads.length === 0 && adsLoaded && (
+            <div style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 14, padding: 20, textAlign: "center", color: "#c8b89a", fontFamily: "Lora,Georgia,serif", fontStyle: "italic" }}>
+              Aucune publicité active.
+            </div>
+          )}
         </div>
       )}
     </div>
