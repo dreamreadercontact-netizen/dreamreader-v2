@@ -33,6 +33,18 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
   const supabase = createClient()
   const prog = useScrollProgress()
   const canRead = chap?.free || isSub || isAdmin
+  const [ad, setAd] = useState<any>(null)
+
+  useEffect(() => {
+    // Les pubs ne s'affichent qu'aux lecteurs non-abonnés (pas admin, pas abonné)
+    if (isSub || isAdmin) return
+    supabase.from("ads").select("id, title, image_url, link_url").eq("active", true).then(({ data }) => {
+      if (data && data.length > 0) {
+        setAd(data[Math.floor(Math.random() * data.length)])
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id, isSub, isAdmin])
   const [comment, setComment] = useState("")
   const [comments, setComments] = useState<any[]>(chap?.comments || [])
   const [myLikes, setMyLikes] = useState<Set<number>>(new Set())
@@ -205,7 +217,22 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
               <div style={{ flex: 1, height: 1, background: "#e0d8cc" }} />✦ ✦ ✦<div style={{ flex: 1, height: 1, background: "#e0d8cc" }} />
             </div>
 
-            {/* VOTE */}
+            {/* PUBLICITÉ (non-abonnés uniquement) */}
+            {ad && (
+              <a href={ad.link_url} target="_blank" rel="noopener sponsored" style={{ display: "block", textDecoration: "none", marginBottom: 40 }}>
+                <div style={{ position: "relative", border: "1px solid #e0d8cc", borderRadius: 14, overflow: "hidden", background: "#fff" }}>
+                  <div style={{ position: "absolute", top: 8, right: 8, fontSize: 9, fontWeight: 700, color: "#b0a090", background: "rgba(245,240,232,.9)", padding: "2px 8px", borderRadius: 10, letterSpacing: 0.5, textTransform: "uppercase", zIndex: 2 }}>Publicité</div>
+                  {ad.image_url && <div style={{ width: "100%", height: 160, background: `#f5f0e8 url(${ad.image_url}) center/cover` }} />}
+                  <div style={{ padding: "14px 18px" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a" }}>{ad.title}</div>
+                    <div style={{ fontSize: 12, color: "#8b6f4e", marginTop: 4, fontWeight: 600 }}>En savoir plus →</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "center", fontSize: 11, color: "#c8b89a", marginTop: 8 }}>Sans publicité avec l&apos;abonnement ✦</div>
+              </a>
+            )}
+
+
             {options.length > 0 && (
               <div style={{ marginTop: 50, borderRadius: 14, overflow: "hidden", border: "1px solid #e0d8cc", boxShadow: "0 2px 8px rgba(0,0,0,.05)" }}>
                 <div style={{ padding: "28px 22px 20px", background: "#fff", borderBottom: "1px solid #e0d8cc", textAlign: "center" }}>
