@@ -60,7 +60,8 @@ export default function NotificationBell({ userId, onOpenChapter }: { userId: st
   }
 
   function handleClick(n: any) {
-    if (n.type === "new_chapter" && n.link && onOpenChapter) {
+    // Toute notif rattachée à un chapitre est cliquable (nouveau chapitre, réponse, commentaire...)
+    if (n.link && onOpenChapter) {
       const cid = parseInt(n.link)
       if (!isNaN(cid)) { onOpenChapter(cid); setOpen(false) }
     }
@@ -107,7 +108,7 @@ export default function NotificationBell({ userId, onOpenChapter }: { userId: st
             <div
               key={n.id}
               onClick={() => handleClick(n)}
-              style={{ display: "flex", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f2ece0", cursor: n.type === "new_chapter" ? "pointer" : "default", background: n.read ? "#fff" : "#faf5ec" }}
+              style={{ display: "flex", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f2ece0", cursor: n.link ? "pointer" : "default", background: n.read ? "#fff" : "#faf5ec" }}
             >
               <div style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>{ICONS[n.type] || "🔔"}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
