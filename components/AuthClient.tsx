@@ -58,6 +58,14 @@ export default function AuthClient() {
     })
     setLoading(false)
     if (error) { setError(error.message); return }
+    // Applique le parrainage si un code a été capturé via /r/CODE
+    try {
+      const refCode = localStorage.getItem('dr_referral')
+      if (refCode) {
+        await supabase.rpc('register_referral', { p_code: refCode })
+        localStorage.removeItem('dr_referral')
+      }
+    } catch {}
     router.push('/')
     router.refresh()
   }
