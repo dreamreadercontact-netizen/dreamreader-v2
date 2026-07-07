@@ -23,6 +23,41 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
   const [ads, setAds] = useState<any[]>([])
   const [adsLoaded, setAdsLoaded] = useState(false)
   const [newAd, setNewAd] = useState({ title: "", image_url: "", link_url: "" })
+  const [editingChap, setEditingChap] = useState<number | null>(null)
+  const [editChapData, setEditChapData] = useState<{ title: string; content: string; free: boolean }>({ title: "", content: "", free: false })
+  const [editLoading, setEditLoading] = useState(false)
+
+  function startEditChap(ch: any) {
+    setEditingChap(ch.id)
+    // charge le contenu complet du chapitre (via RPC sécurisée admin)
+    supabase.rpc("get_chapter_content", { p_chapter_id: ch.id }).then(({ data }) => {
+      setEditChapData({ title: ch.title || "", content: (data as string) || "", free: ch.free || false })
+    })
+  }
+
+  async function saveEditChap(chapId: number, novelId: number) {
+    if (!editChapData.title.trim() || !editChapData.content.trim()) { showToast("Titre et contenu requis"); return }
+    setEditLoading(true)
+    const { error } = await supabase.from("chapters")
+      .update({ title: editChapData.title, content: editChapData.content, free: editChapData.free })
+      .eq("id", chapId)
+    setEditLoading(false)
+    if (error) { showToast("Erreur: " + error.message); return }
+    // met à jour l'affichage local
+    setNovels(prev => prev.map(n => n.id === novelId ? {
+      ...n, chapters: n.chapters.map((c: any) => c.id === chapId ? { ...c, title: editChapData.title, free: editChapData.free } : c)
+    } : n))
+    setEditingChap(null)
+    showToast("✓ Chapitre modifié")
+  }
+
+  async function deleteChap(chapId: number, novelId: number) {
+    if (!confirm("Supprimer définitivement ce chapitre ?")) return
+    const { error } = await supabase.from("chapters").delete().eq("id", chapId)
+    if (error) { showToast("Erreur: " + error.message); return }
+    setNovels(prev => prev.map(n => n.id === novelId ? { ...n, chapters: n.chapters.filter((c: any) => c.id !== chapId) } : n))
+    showToast("Chapitre supprimé")
+  }
   const [newChap, setNewChap] = useState({ novelId: "", title: "", content: "", free: false, opt1: "", opt2: "", opt3: "" })
   const [showNewNovel, setShowNewNovel] = useState(false)
   const [newNovel, setNewNovel] = useState({ title: "", genre: "", desc: "", status: "live" })
@@ -260,19 +295,55 @@ export default function AdminView({ novels, setNovels, showToast }: Props) {
 
       {adminTab === "chapters" && (
         <div>
+          <div style={{ background: "#faf5ec", border: "1px solid #e8dcc8", borderRadius: 12, padding: 14, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>✦ Roman en vitrine</div>
+            <div style={{ fontSize: 12, color: "#9a8878", lineHeight: 1.6, marginBottom: 12 }}>
+              Le roman dont les abonnés votent la suite. Les visiteurs non-abonnés le voient en avant-première (image + vote flouté) pour leur donner envie de rejoindre.
+            </div>
+            {novels.map(n => (
+              <label key={n.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", cursor: "pointer" }}>
+                <input type="checkbox" checked={!!n.showcase} onChange={async (e) => {
+                  const on = e.target.checked
+                  // un seul roman en vitrine à la fois
+                  if (on) { await supabase.from("novels").update({ showcase: false }).neq("id", n.id) }
+                  const { error } = await supabase.from("novels").update({ showcase: on }).eq("id", n.id)
+                  if (!error) setNovels(prev => prev.map(x => ({ ...x, showcase: x.id === n.id ? on : false })))
+                }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>{n.title}</span>
+                {n.showcase && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", padding: "3px 10px", borderRadius: 20 }}>EN VITRINE</span>}
+              </label>
+            ))}
+          </div>
           {novels.map(n => (
             <div key={n.id} style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", marginBottom: 10 }}>{n.title}</div>
               {n.chapters?.map((ch: any) => (
                 <div key={ch.id} style={{ background: "#fff", border: "1px solid #e0d8cc", borderRadius: 12, padding: 14, marginBottom: 8 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 6, background: "#e0d8cc", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: "#1a1a1a" }}>{ch.num}</div>
+                  {editingChap === ch.id ? (
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a" }}>{ch.title}</div>
-                      <div style={{ fontSize: 11, color: "#b0a090" }}>{new Date(ch.published_at).toLocaleDateString("fr-FR")}</div>
+                      <input value={editChapData.title} onChange={e => setEditChapData({ ...editChapData, title: e.target.value })} placeholder="Titre du chapitre" style={{ width: "100%", border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "10px 12px", fontSize: 14, fontWeight: 700, marginBottom: 8, boxSizing: "border-box" }} />
+                      <textarea value={editChapData.content} onChange={e => setEditChapData({ ...editChapData, content: e.target.value })} placeholder="Contenu du chapitre" rows={10} style={{ width: "100%", border: "1.5px solid #d8cfc4", borderRadius: 10, padding: "10px 12px", fontSize: 13, lineHeight: 1.6, fontFamily: "Lora,Georgia,serif", marginBottom: 8, boxSizing: "border-box", resize: "vertical" }} />
+                      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#5a4a3a", marginBottom: 12, cursor: "pointer" }}>
+                        <input type="checkbox" checked={editChapData.free} onChange={e => setEditChapData({ ...editChapData, free: e.target.checked })} />
+                        Chapitre gratuit (accessible sans abonnement)
+                      </label>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => saveEditChap(ch.id, n.id)} disabled={editLoading} style={{ flex: 1, height: 38, borderRadius: 10, border: "none", background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>{editLoading ? "..." : "✓ Enregistrer"}</button>
+                        <button onClick={() => setEditingChap(null)} style={{ padding: "0 16px", height: 38, borderRadius: 10, border: "1.5px solid #d8cfc4", background: "none", color: "#9a8878", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Annuler</button>
+                      </div>
                     </div>
-                    {ch.free && <span className="pill pill-default" style={{ marginLeft: "auto" }}>Gratuit</span>}
-                  </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: 6, background: "#e0d8cc", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 12, color: "#1a1a1a", flexShrink: 0 }}>{ch.num}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: "#1a1a1a" }}>{ch.title}</div>
+                        <div style={{ fontSize: 11, color: "#b0a090" }}>{new Date(ch.published_at).toLocaleDateString("fr-FR")}</div>
+                      </div>
+                      {ch.free && <span className="pill pill-default">Gratuit</span>}
+                      <button onClick={() => startEditChap(ch)} style={{ padding: "6px 12px", borderRadius: 8, border: "1.5px solid #d8cfc4", background: "none", color: "#8b6f4e", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Modifier</button>
+                      <button onClick={() => deleteChap(ch.id, n.id)} style={{ background: "none", border: "none", color: "#c8b89a", cursor: "pointer", fontSize: 16 }}>✕</button>
+                    </div>
+                  )}
                 </div>
               ))}
               {(!n.chapters || n.chapters.length === 0) && <div style={{ fontSize: 13, color: "#c8b89a", fontStyle: "italic" }}>Aucun chapitre.</div>}
