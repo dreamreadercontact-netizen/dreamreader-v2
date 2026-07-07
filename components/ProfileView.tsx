@@ -11,9 +11,26 @@ export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile;
 
   useEffect(() => {
     if (!user?.id) return
-    supabase.from('profiles').select('notify_new_chapter').eq('id', user.id).single()
-      .then(({ data }) => setNotif(data?.notify_new_chapter ?? true))
-    supabase.rpc('my_referral_stats').then(({ data }) => { if (data) setRef(data) })
+    // Source fiable : on lit tout directement depuis le profil
+    supabase.from('profiles')
+      .select('notify_new_chapter, referral_code, ambassador_level, validated_referrals, free_months_earned')
+      .eq('id', user.id).single()
+      .then(({ data }) => {
+        if (data) {
+          setNotif(data.notify_new_chapter ?? true)
+          if (data.referral_code) {
+            setRef({
+              code: data.referral_code,
+              level: data.ambassador_level ?? 0,
+              validated: data.validated_referrals ?? 0,
+              subscribed: 0,
+              free_months: data.free_months_earned ?? 0,
+            })
+          }
+        }
+      })
+    // Complément (nombre de filleuls en cours) — si ça échoue, la carte reste affichée
+    supabase.rpc('my_referral_stats').then(({ data }) => { if (data && data.code) setRef(data) }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
