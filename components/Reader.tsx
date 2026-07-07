@@ -369,6 +369,7 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
                         <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", marginBottom: 5 }}>
                           {prof?.name || "Lecteur"}
                           {prof?.role === "admin" && <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>✦ AUTEUR</span>}
+                          {prof?.role !== "admin" && prof?.ambassador_level >= 1 && <span style={{ marginLeft: 8, padding: "2px 8px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 10, fontWeight: 800, letterSpacing: 0.5 }}>{prof.ambassador_level >= 2 ? "✦✦ AMBASSADEUR" : "✦ AMBASSADEUR"}</span>}
                         </div>
                         <div style={{ fontFamily: "Lora,Georgia,serif", fontSize: 14, lineHeight: 1.7, color: "#5a4a3a" }}>{cc.text}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8, fontSize: 11 }}>
