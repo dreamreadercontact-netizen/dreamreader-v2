@@ -17,7 +17,7 @@ export default function Home() {
 
       const [{ data: profile }, { data: novels }] = await Promise.all([
         supabase.from("profiles").select("id, name, role, subscribed, avatar, created_at").eq("id", session.user.id).single(),
-        supabase.from("novels").select("*, chapters(id, num, title, free, published_at, vote_open, vote_closed, winner_option_id, vote_options(id, text, votes), comments(id, text, likes, created_at, user_id, parent_id, profiles(name, avatar, role)))").order("created_at")
+        supabase.from("novels").select("*, chapters(id, num, title, free, published_at, vote_open, vote_closed, winner_option_id, vote_options(id, text, votes), comments(id, text, likes, created_at, user_id, parent_id, profiles(name, avatar, role, ambassador_level)))").order("created_at")
       ])
 
       setData({
