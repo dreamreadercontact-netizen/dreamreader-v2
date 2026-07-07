@@ -107,7 +107,7 @@ export default function NotificationBell({ userId, onOpenChapter }: { userId: st
           {notifs.map(n => (
             <div
               key={n.id}
-              onClick={() => handleClick(n)}
+              onMouseDown={(e) => { e.stopPropagation(); handleClick(n) }}
               style={{ display: "flex", gap: 12, padding: "12px 16px", borderBottom: "1px solid #f2ece0", cursor: n.link ? "pointer" : "default", background: n.read ? "#fff" : "#faf5ec" }}
             >
               <div style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.4 }}>{ICONS[n.type] || "🔔"}</div>
