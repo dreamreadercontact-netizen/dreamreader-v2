@@ -6,13 +6,34 @@ import { createClient } from '@/lib/supabase/client'
 export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile; isSub: boolean; isAdmin: boolean; onLogout: () => void }) {
   const supabase = createClient()
   const [notif, setNotif] = useState<boolean | null>(null)
+  const [ref, setRef] = useState<any>(null)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (!user?.id) return
     supabase.from('profiles').select('notify_new_chapter').eq('id', user.id).single()
       .then(({ data }) => setNotif(data?.notify_new_chapter ?? true))
+    supabase.rpc('my_referral_stats').then(({ data }) => { if (data) setRef(data) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
+
+  const refLink = ref?.code ? `https://dreamreader.fr/r/${ref.code}` : ''
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(refLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
+
+  async function shareLink() {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'DreamReader', text: 'Rejoins-moi sur DreamReader — des romans où tu votes pour la suite ! 5 jours gratuits :', url: refLink }) } catch {}
+    } else {
+      copyLink()
+    }
+  }
 
   async function toggleNotif() {
     if (notif === null) return
@@ -33,6 +54,11 @@ export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile;
         {isSub && !isAdmin && (
           <div className="inline-block px-3 py-1 rounded-[20px] bg-[#1a1a1a] text-white text-[12px] font-bold mb-3">★ ABONNÉ</div>
         )}
+        {ref && ref.level >= 1 && (
+          <div style={{ display: 'inline-block', marginLeft: isSub && !isAdmin ? 8 : 0, padding: '4px 12px', borderRadius: 20, background: 'linear-gradient(135deg,#8b6f4e,#c8a96e)', color: '#fff', fontSize: 12, fontWeight: 800, marginBottom: 12 }}>
+            {ref.level >= 2 ? '✦✦ AMBASSADEUR D\'OR' : '✦ AMBASSADEUR'}
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 0', borderTop: '1px solid #ede8e0', marginTop: 6, marginBottom: 10 }}>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>📖 Nouveaux chapitres</div>
@@ -46,6 +72,50 @@ export function ProfileView({ user, isSub, isAdmin, onLogout }: { user: Profile;
             <span style={{ position: 'absolute', top: 3, left: notif ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
           </button>
         </div>
+        {ref && ref.code && !isAdmin && (
+          <div style={{ borderTop: '1px solid #ede8e0', paddingTop: 16, marginBottom: 12 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>✦ Parrainez des lecteurs</div>
+            <div style={{ fontSize: 12, color: '#9a8878', lineHeight: 1.6, marginBottom: 14 }}>
+              Partagez votre lien. Chaque filleul reçoit <strong>5 jours d&apos;essai</strong>. Dès qu&apos;il s&apos;abonne, vous gagnez du galon : badge Ambassadeur, vote qui compte double, et un mois offert.
+            </div>
+
+            {/* Le lien */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <div style={{ flex: 1, background: '#f5f0e8', border: '1.5px solid #e0d8cc', borderRadius: 10, padding: '11px 14px', fontSize: 13, fontFamily: 'monospace', color: '#5a4a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                dreamreader.fr/r/{ref.code}
+              </div>
+              <button onClick={copyLink} style={{ padding: '0 16px', borderRadius: 10, border: 'none', background: '#1a1a1a', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+                {copied ? '✓' : 'Copier'}
+              </button>
+            </div>
+            <button onClick={shareLink} style={{ width: '100%', height: 44, borderRadius: 10, border: '1.5px solid #c8b89a', background: '#fff', color: '#1a1a1a', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 16 }}>
+              📤 Partager mon lien
+            </button>
+
+            {/* Progression */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+              <div style={{ flex: 1, background: '#faf5ec', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#8b6f4e' }}>{ref.validated}</div>
+                <div style={{ fontSize: 10, color: '#9a8878', fontWeight: 700 }}>Validés</div>
+              </div>
+              <div style={{ flex: 1, background: '#faf5ec', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#8b6f4e' }}>{ref.subscribed}</div>
+                <div style={{ fontSize: 10, color: '#9a8878', fontWeight: 700 }}>En cours</div>
+              </div>
+              <div style={{ flex: 1, background: '#faf5ec', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#8b6f4e' }}>{ref.free_months}</div>
+                <div style={{ fontSize: 10, color: '#9a8878', fontWeight: 700 }}>Mois offerts</div>
+              </div>
+            </div>
+            {ref.level < 2 && (
+              <div style={{ fontSize: 11, color: '#b0a090', textAlign: 'center', marginTop: 8 }}>
+                {ref.level === 0
+                  ? `Encore ${1 - ref.validated <= 0 ? 1 : 1} filleul abonné pour devenir Ambassadeur ✦`
+                  : `Plus que ${5 - ref.validated} filleuls pour devenir Ambassadeur d'Or ✦✦`}
+              </div>
+            )}
+          </div>
+        )}
         <button className="btn-outline rounded-xl text-[13px]" onClick={onLogout}>Se déconnecter</button>
       </div>
     </div>
