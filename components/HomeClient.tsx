@@ -144,9 +144,11 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
             onOpenChapter={(chapterId) => {
               // Cherche le roman contenant ce chapitre et l'ouvre
               for (const n of novels) {
-                const c = n.chapters?.find((ch: any) => ch.id === chapterId)
-                if (c) { setSelNovel(n); setSelChapId(chapterId); goTo("home"); return }
+                const c = n.chapters?.find((ch: any) => String(ch.id) === String(chapterId))
+                if (c) { setSelNovel(n); setSelChapId(Number(chapterId)); setTab("home"); return }
               }
+              // Fallback : si pas trouvé dans la liste, va au moins à la bibliothèque
+              setTab("library")
             }}
           />
         )}
