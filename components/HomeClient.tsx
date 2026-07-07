@@ -11,6 +11,7 @@ import Reader from "./Reader"
 import NovelDetail from "./NovelDetail"
 import SubscribeView from "./SubscribeView"
 import NotificationBell from "./NotificationBell"
+import ShowcaseCard from "./ShowcaseCard"
 
 type Tab = "home" | "library" | "books" | "admin" | "sub" | "profile"
 
@@ -177,6 +178,10 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
                 )}
               </div>
             </div>
+
+            {/* Vitrine "vote en cours" — uniquement pour les non-abonnés */}
+            {!isSub && <ShowcaseCard stripeUrl={STRIPE} />}
+
             {resume && (
               <div onClick={() => { setSelNovel(resume.novel); setSelChapId(resume.chap.id) }}
                 style={{ background: "#1a1a1a", borderRadius: 14, padding: "16px 18px", marginBottom: 14, display: "flex", alignItems: "center", gap: 14, cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,.15)" }}>
