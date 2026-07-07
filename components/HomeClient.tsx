@@ -32,6 +32,27 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const [previewMode, setPreviewMode] = useState(false)
   const [zoomImage, setZoomImage] = useState<string|null>(null)
   const [resume, setResume] = useState<any>(null)
+  const [refData, setRefData] = useState<any>(null)
+  const [refCopied, setRefCopied] = useState(false)
+
+  useEffect(() => {
+    if (!user?.id || user?.role === "admin") return
+    supabase.from("profiles")
+      .select("referral_code, ambassador_level, validated_referrals, free_months_earned")
+      .eq("id", user.id).single()
+      .then(({ data }) => { if (data?.referral_code) setRefData(data) })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const refLink = refData?.referral_code ? `dreamreader.fr/r/${refData.referral_code}` : ""
+  async function copyRef() {
+    try { await navigator.clipboard.writeText("https://" + refLink); setRefCopied(true); setTimeout(() => setRefCopied(false), 2000) } catch {}
+  }
+  async function shareRef() {
+    if ((navigator as any).share) {
+      try { await (navigator as any).share({ title: "DreamReader", text: "Rejoins-moi sur DreamReader — des romans où tu votes pour la suite ! 5 jours gratuits :", url: "https://" + refLink }) } catch {}
+    } else { copyRef() }
+  }
 
   useEffect(() => {
     if (!user?.id) return
@@ -232,7 +253,37 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
                   S'abonner · 5€/mois
                 </a>
               )}
+              {refData?.ambassador_level >= 1 && (
+                <div style={{ display: "inline-block", marginLeft: 8, padding: "4px 12px", borderRadius: 20, background: "linear-gradient(135deg,#8b6f4e,#c8a96e)", color: "#fff", fontSize: 12, fontWeight: 800, marginBottom: 12 }}>
+                  {refData.ambassador_level >= 2 ? "✦✦ AMBASSADEUR D'OR" : "✦ AMBASSADEUR"}
+                </div>
+              )}
               <br />
+
+              {refData?.referral_code && !isAdmin && (
+                <div style={{ borderTop: "1px solid #ede8e0", paddingTop: 18, marginTop: 6, marginBottom: 16, textAlign: "left" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", marginBottom: 4 }}>✦ Parrainez des lecteurs</div>
+                  <div style={{ fontSize: 12, color: "#9a8878", lineHeight: 1.6, marginBottom: 14 }}>
+                    Partagez votre lien. Chaque filleul reçoit <strong>5 jours d'essai</strong>. Dès qu'il s'abonne, vous gagnez : badge Ambassadeur, vote qui compte double, et un mois offert.
+                  </div>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: 1, background: "#f5f0e8", border: "1.5px solid #e0d8cc", borderRadius: 10, padding: "11px 14px", fontSize: 13, fontFamily: "monospace", color: "#5a4a3a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{refLink}</div>
+                    <button onClick={copyRef} style={{ padding: "0 16px", borderRadius: 10, border: "none", background: "#1a1a1a", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>{refCopied ? "✓" : "Copier"}</button>
+                  </div>
+                  <button onClick={shareRef} style={{ width: "100%", height: 44, borderRadius: 10, border: "1.5px solid #c8b89a", background: "#fff", color: "#1a1a1a", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 16 }}>📤 Partager mon lien</button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div style={{ flex: 1, background: "#faf5ec", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#8b6f4e" }}>{refData.validated_referrals || 0}</div>
+                      <div style={{ fontSize: 10, color: "#9a8878", fontWeight: 700 }}>Filleuls validés</div>
+                    </div>
+                    <div style={{ flex: 1, background: "#faf5ec", borderRadius: 10, padding: "12px 8px", textAlign: "center" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "#8b6f4e" }}>{refData.free_months_earned || 0}</div>
+                      <div style={{ fontSize: 10, color: "#9a8878", fontWeight: 700 }}>Mois offerts</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button onClick={logout} style={{ padding: "8px 20px", borderRadius: 12, border: "1.5px solid #d8cfc4", background: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", color: "#1a1a1a" }}>Se déconnecter</button>
             </div>
           </div>
