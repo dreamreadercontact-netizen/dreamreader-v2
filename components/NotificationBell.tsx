@@ -12,7 +12,7 @@ const ICONS: Record<string, string> = {
   new_comment: "💬",
 }
 
-export default function NotificationBell({ userId, onOpenChapter }: { userId: string; onOpenChapter?: (chapterId: number) => void }) {
+export default function NotificationBell({ userId, onOpenChapter }: { userId: string; onOpenChapter?: (chapterId: number, goToComments?: boolean) => void }) {
   const supabase = createClient()
   const [notifs, setNotifs] = useState<any[]>([])
   const [open, setOpen] = useState(false)
@@ -60,10 +60,15 @@ export default function NotificationBell({ userId, onOpenChapter }: { userId: st
   }
 
   function handleClick(n: any) {
-    // Toute notif rattachée à un chapitre est cliquable (nouveau chapitre, réponse, commentaire...)
+    // Toute notif rattachée à un chapitre est cliquable
     if (n.link && onOpenChapter) {
       const cid = parseInt(n.link)
-      if (!isNaN(cid)) { onOpenChapter(cid); setOpen(false) }
+      if (!isNaN(cid)) {
+        // Pour les notifs de commentaire/réponse, on va directement à la section commentaires
+        const toComments = n.type === "reply" || n.type === "new_comment" || n.type === "like"
+        onOpenChapter(cid, toComments)
+        setOpen(false)
+      }
     }
   }
 
