@@ -29,6 +29,7 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
   const [user] = useState<Profile>(initialUser)
   const [selNovel, setSelNovel] = useState<Novel | null>(null)
   const [selChapId, setSelChapId] = useState<number | null>(null)
+  const [openComments, setOpenComments] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState(false)
   const [zoomImage, setZoomImage] = useState<string|null>(null)
@@ -111,9 +112,10 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
         user={user}
         isSub={isSub}
         isAdmin={isAdmin}
-        onBack={() => setSelChapId(null)}
+        onBack={() => { setSelChapId(null); setOpenComments(false) }}
         showToast={showToast}
         stripeUrl={STRIPE}
+        scrollToComments={openComments}
       />
     )
   }
@@ -141,11 +143,11 @@ export default function HomeClient({ user: initialUser, novels: initialNovels }:
         {user?.id && !user?.is_anonymous && (
           <NotificationBell
             userId={user.id}
-            onOpenChapter={(chapterId) => {
+            onOpenChapter={(chapterId, goToComments) => {
               // Cherche le roman contenant ce chapitre et l'ouvre
               for (const n of novels) {
                 const c = n.chapters?.find((ch: any) => String(ch.id) === String(chapterId))
-                if (c) { setSelNovel(n); setSelChapId(Number(chapterId)); setTab("home"); return }
+                if (c) { setSelNovel(n); setSelChapId(Number(chapterId)); setOpenComments(!!goToComments); setTab("home"); return }
               }
               // Fallback : si pas trouvé dans la liste, va au moins à la bibliothèque
               setTab("library")
