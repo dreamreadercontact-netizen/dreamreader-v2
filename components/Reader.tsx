@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   onBack: () => void
   showToast: (msg: string) => void
   stripeUrl: string
+  scrollToComments?: boolean
 }
 
 function useScrollProgress() {
@@ -29,7 +30,19 @@ function useScrollProgress() {
   return p
 }
 
-export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, showToast, stripeUrl }: Props) {
+export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, showToast, stripeUrl, scrollToComments }: Props) {
+  const commentsRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scrollToComments && commentsRef.current) {
+      // petit délai pour laisser le contenu se charger
+      const t = setTimeout(() => {
+        commentsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+      }, 400)
+      return () => clearTimeout(t)
+    }
+  }, [scrollToComments, chap?.id])
+
   const supabase = createClient()
   const prog = useScrollProgress()
   const canRead = chap?.free || isSub || isAdmin
@@ -332,7 +345,7 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
             )}
 
             {/* COMMENTS */}
-            <div style={{ marginTop: 50, paddingTop: 36, borderTop: "1px solid #e0d8cc" }}>
+            <div ref={commentsRef} style={{ marginTop: 50, paddingTop: 36, borderTop: "1px solid #e0d8cc" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#b0a090", letterSpacing: 2, textTransform: "uppercase", marginBottom: 24 }}>Commentaires ({comments.length})</div>
 
               {(isSub || isAdmin) ? (
