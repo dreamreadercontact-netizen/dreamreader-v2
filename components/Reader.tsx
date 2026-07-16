@@ -102,6 +102,52 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
   const [userVoted, setUserVoted] = useState<number | null>(null)
   const [content, setContent] = useState<string | null>(null)
   const total = options.reduce((s: number, o: any) => s + (o.votes || 0), 0)
+  const [readConfirmed, setReadConfirmed] = useState(false)
+  const [readCount, setReadCount] = useState<number | null>(null)
+  const [confirmingRead, setConfirmingRead] = useState(false)
+  const isLastChapter = novel?.chapters?.length > 0 && chap?.num === Math.max(...novel.chapters.map((c: any) => c.num))
+  const [novelCompleted, setNovelCompleted] = useState(false)
+  const [confirmingCompletion, setConfirmingCompletion] = useState(false)
+
+  useEffect(() => {
+    if (!chap?.id || !canRead) return
+    if (user?.id) {
+      supabase.from("chapter_read_confirmations").select("id").eq("chapter_id", chap.id).eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => setReadConfirmed(!!data))
+    }
+    supabase.rpc("chapter_read_confirmation_count", { p_chapter_id: chap.id }).then(({ data }) => {
+      if (typeof data === "number") setReadCount(data)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chap?.id, canRead, user?.id])
+
+  useEffect(() => {
+    if (!novel?.id || !user?.id || !isLastChapter) return
+    supabase.from("novel_completions").select("id").eq("novel_id", novel.id).eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setNovelCompleted(!!data))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [novel?.id, user?.id, isLastChapter])
+
+  async function handleConfirmRead() {
+    if (!user || confirmingRead || readConfirmed) return
+    setConfirmingRead(true)
+    const { error } = await supabase.rpc("confirm_chapter_read", { p_chapter_id: chap.id })
+    setConfirmingRead(false)
+    if (error) { showToast("Erreur"); return }
+    setReadConfirmed(true)
+    setReadCount((c) => (c === null ? 1 : c + 1))
+    showToast("✓ Lecture confirmée — merci !")
+  }
+
+  async function handleConfirmCompletion() {
+    if (!user || confirmingCompletion || novelCompleted) return
+    setConfirmingCompletion(true)
+    const { error } = await supabase.rpc("confirm_novel_completed", { p_novel_id: novel.id })
+    setConfirmingCompletion(false)
+    if (error) { showToast("Erreur"); return }
+    setNovelCompleted(true)
+    showToast("✦ Merci d'avoir lu ce roman jusqu'au bout !")
+  }
 
   useEffect(() => {
     if (!user?.id) return
@@ -289,6 +335,45 @@ export default function Reader({ novel, chap, user, isSub, isAdmin, onBack, show
                 })}
               </div>
             </div>
+
+            {/* CONFIRMATION DE LECTURE */}
+            <div style={{ textAlign: "center", marginBottom: 40 }}>
+              <button
+                onClick={handleConfirmRead}
+                disabled={confirmingRead || readConfirmed}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 22px", borderRadius: 30,
+                  border: "1.5px solid", borderColor: readConfirmed ? "#8b6f4e" : "#e0d8cc",
+                  background: readConfirmed ? "#faf5ec" : "#fff", cursor: readConfirmed ? "default" : "pointer",
+                  fontSize: 13, fontWeight: 700, color: readConfirmed ? "#8b6f4e" : "#1a1a1a", transition: "all .15s"
+                }}
+              >
+                {readConfirmed ? "✓ Lecture confirmée — j'attends la suite" : confirmingRead ? "..." : "J'ai lu ce chapitre ✓"}
+              </button>
+              {readCount !== null && readCount > 0 && (
+                <div style={{ fontSize: 11, color: "#b0a090", marginTop: 8 }}>
+                  {readCount} lecteur{readCount > 1 ? "s" : ""} attend{readCount > 1 ? "ent" : ""} déjà la suite
+                </div>
+              )}
+            </div>
+
+            {/* CONFIRMATION FIN DE ROMAN — dernier chapitre uniquement */}
+            {isLastChapter && (
+              <div style={{ textAlign: "center", marginBottom: 40, padding: "24px 20px", background: "#fff", border: "1.5px solid #e0d8cc", borderRadius: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#b0a090", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 12 }}>Dernier chapitre disponible</div>
+                <button
+                  onClick={handleConfirmCompletion}
+                  disabled={confirmingCompletion || novelCompleted}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 24px", borderRadius: 30,
+                    border: "none", background: novelCompleted ? "#8b6f4e" : "#1a1a1a", cursor: novelCompleted ? "default" : "pointer",
+                    fontSize: 14, fontWeight: 800, color: "#fff"
+                  }}
+                >
+                  {novelCompleted ? "✦ Roman terminé — merci !" : confirmingCompletion ? "..." : "J'ai terminé la lecture de ce roman"}
+                </button>
+              </div>
+            )}
 
             {/* PUBLICITÉ (non-abonnés uniquement) */}
             {ad && (
